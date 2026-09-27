@@ -2,120 +2,143 @@
 
 ## 1. Project Purpose
 
-Finance AI App is a mobile-friendly personal finance tracking and analysis application.
+Finance AI App is a personal finance web application designed to help users:
 
-The application helps users:
+1. Track their income and expenses
+2. Understand their spending habits
+3. Manage category budgets
+4. Track savings goals
+5. Receive controlled AI-powered financial analysis
 
-* Record income and expenses manually
-* Understand where their money is going
-* Monitor category-based budgets
-* Create and track savings goals
-* Identify recurring expenses
-* Analyze financial activity using AI
-* Receive personalized suggestions for improving spending and saving habits
+The application is designed to be:
 
-The application is intended to help users understand and manage their financial information.
+* Simple
+* Mobile-first
+* PWA-installable
+* Secure
+* Multi-user
+* Free to operate for V1
+* Useful without AI
+* Suitable as a real personal project and portfolio project
 
 ---
 
-## 2. Core Principle
+# 2. Core Product Principle
 
-> This application is a finance TRACKING and ANALYSIS application, not a financial transaction application.
+> **Finance AI App helps users TRACK, UNDERSTAND, and IMPROVE their financial habits.**
 
-The application must NEVER connect to, access, control, or execute transactions through a user's:
+The application does **not** move, control, or execute the user's money.
 
-* Bank accounts
-* Credit/debit card accounts
-* E-wallet accounts
-* Cryptocurrency exchanges
-* Cryptocurrency wallets
-* Investment accounts
-* Brokerage accounts
-* Payment accounts
+---
 
-The application must never:
+# 3. Permanent Product Boundary
 
+The application must NOT:
+
+* Connect to bank accounts
+* Connect to crypto exchanges
+* Connect to crypto wallets
+* Store bank passwords
+* Store payment credentials
+* Store crypto private keys
+* Execute purchases or sales
 * Transfer money
-* Send money
-* Receive money
-* Buy investments
-* Sell investments
-* Buy cryptocurrency
-* Sell cryptocurrency
-* Place financial orders
-* Access bank credentials
-* Access crypto exchange credentials
-* Automatically synchronize with bank accounts
-* Automatically synchronize with crypto accounts
+* Withdraw money
+* Deposit money
+* Execute investment transactions
+* Automatically synchronize bank transactions
 
-Financial transactions are entered manually by the user.
-
-This principle is permanent unless explicitly changed in a future project decision.
+All financial transactions are manually entered by the user.
 
 ---
 
-## 3. Target User
+# 4. V1 Technology Architecture
 
-The initial target user is the individual user of the application.
+The planned V1 stack is:
 
-The application should be designed so that multi-user support can potentially be added in the future, but multi-user functionality is NOT required for V1.
+* Next.js
+* TypeScript
+* Tailwind CSS
+* Supabase PostgreSQL
+* Supabase Auth
+* Supabase Row Level Security
+* Recharts
+* Zod
+* Gemini API Free Tier
+* Vercel Hobby
+* Git
+* GitHub
+* Progressive Web App (PWA)
 
----
+The stack should remain as small as reasonably possible.
 
-## 4. Primary User Flow
-
-The primary experience should be:
-
-1. Open the application
-2. View the dashboard
-3. Understand current spending
-4. Click "Add Expense"
-5. Enter the amount
-6. Select the category
-7. Select a meal type if the category is Food
-8. Date defaults to today
-9. User can change the date
-10. Add optional notes
-11. Save the transaction
-12. Dashboard updates automatically
-13. User can edit or delete the transaction later
-14. User can review category budgets
-15. User can create savings goals
-16. At the end of a period, user can ask the AI about their spending
-17. AI analyzes the user's actual financial data
-18. AI provides observations and suggestions
-19. User remains responsible for deciding what actions to take
+Do not introduce additional services, frameworks, libraries, agents, automation platforms, or paid services unless there is a clear reason.
 
 ---
 
-## 5. Transaction System
+# 5. Zero-Cost Requirement
 
-### 5.1 Expenses
+V1 must operate at:
 
-Users can manually create expenses.
+> **RM0 / $0**
 
-Required information:
+The project must not require:
 
-* Amount
-* Category
-* Date
+* Paid subscriptions
+* Paid trials
+* Required credit cards
+* Paid APIs
+* Pay-as-you-go billing
+* Automatic paid upgrades
 
-Optional information:
+The application should use free tiers/free services where appropriate.
 
-* Meal type when Category = Food
-* Notes
+If a free-tier limit is reached, the application should degrade gracefully rather than automatically creating a paid charge.
 
-The date should default to the current date but must remain editable.
+---
 
-### 5.2 Income
+# 6. Authentication
 
-Users can manually enter income.
+Authentication is required from V1.
 
-Income must NOT be fixed to a predetermined salary.
+Use:
 
-Users should be able to enter different amounts whenever they receive income.
+* Supabase Auth
 
-Examples:
+Users must log in before accessing their financial data.
+
+Each user's financial records must be associated with their authenticated `user_id`.
+
+Supabase Row Level Security must prevent users from accessing another user's records.
+
+---
+
+# 7. Primary User Flow
+
+The main V1 flow is:
+
+1. Open application
+2. Sign up / log in
+3. View dashboard
+4. Add income or expense
+5. Select category
+6. Enter amount
+7. Select/edit date
+8. Optionally add notes
+9. Save transaction
+10. Dashboard updates
+11. Review spending
+12. Review budgets
+13. Review savings goals
+14. Request monthly AI financial analysis
+
+---
+
+# 8. Income System
+
+Income must be manually entered.
+
+Income categories:
 
 * Salary
 * Bonus
@@ -123,16 +146,37 @@ Examples:
 * Gift
 * Other
 
-Income should have:
+Income must NOT be hardcoded to a specific salary.
 
-* Amount
-* Category
-* Date
-* Optional notes
+The user may have different income amounts or multiple income transactions.
 
-### 5.3 Categories
+---
 
-Initial categories may include:
+# 9. Transaction System
+
+Use one `transactions` table for both income and expenses.
+
+## Transaction fields
+
+* `id`
+* `user_id`
+* `type`
+* `amount`
+* `category`
+* `meal_type`
+* `date`
+* `notes`
+* `created_at`
+* `updated_at`
+
+## Transaction type
+
+Allowed values:
+
+* `expense`
+* `income`
+
+## Expense categories
 
 * Food
 * Rent
@@ -146,11 +190,17 @@ Initial categories may include:
 * Debt
 * Other
 
-The system should be designed so custom categories can potentially be supported later.
+## Income categories
 
-### 5.4 Food / Meal Types
+* Salary
+* Bonus
+* Freelance
+* Gift
+* Other
 
-When the category is Food, users can optionally select:
+## Food meal types
+
+If category is Food, the user may optionally select:
 
 * Breakfast
 * Lunch
@@ -158,35 +208,37 @@ When the category is Food, users can optionally select:
 * Snack
 * Other
 
-Meal type should not be required for non-food categories.
+Meal type is only relevant to Food transactions.
 
-### 5.5 Editing
+## Transaction rules
 
-Users must be able to edit saved transactions.
-
-Editable fields include:
+Required:
 
 * Amount
+* Type
 * Category
-* Meal type
 * Date
+
+Optional:
+
+* Meal type
 * Notes
 
-### 5.6 Deleting
+Date should default to the current date but remain editable.
 
-Users can delete saved transactions.
+Users can edit transactions.
 
-Deletion must require an appropriate confirmation step to reduce accidental deletion.
+Users can delete transactions.
+
+Deletion must require confirmation.
+
+Changing a transaction date must correctly update monthly calculations.
 
 ---
 
-## 6. Dashboard
+# 10. Dashboard
 
-The dashboard is the main screen of the application.
-
-It should provide a quick understanding of the user's financial activity.
-
-### Required information
+The dashboard should display:
 
 * Monthly income
 * Monthly expenses
@@ -196,446 +248,456 @@ It should provide a quick understanding of the user's financial activity.
 * Spending chart
 * Category budget progress
 
-### Remaining Money
-
-Remaining money should be calculated from actual transaction data:
-
-Remaining Money = Income - Expenses
-
-The system should avoid maintaining an independent manually stored "remaining money" value that could become inconsistent with the underlying transactions.
-
-### Category Spending
-
-The dashboard should allow users to visually understand spending across categories such as:
-
-* Food
-* Rent
-* Petrol
-* Investment
-* Bills
-* etc.
+The user should be able to select/view a specific month.
 
 ---
 
-## 7. Budget System
+# 11. Dashboard Calculations
 
-Category budgets are the primary budgeting feature.
-
-Users can create a budget for a category.
+Financial calculations must be performed by application/database logic, not by AI.
 
 Example:
 
-Food budget:
-RM800
+Income:
 
-Food spending:
-RM650
+RM4,000
+
+Expenses:
+
+RM2,850
 
 Remaining:
-RM150
 
-The application should:
+RM1,150
 
-* Create category budgets
-* Edit category budgets
-* Calculate spending
-* Calculate remaining budget
-* Detect overspending
-* Display an overspending warning
+## Calculation rules
 
-Budget calculations must use actual transaction data.
+Monthly income:
 
----
+> Sum all income transactions for the selected month.
 
-## 8. Recurring Expenses
+Monthly expenses:
 
-The application should eventually identify possible recurring expenses.
+> Sum all expense transactions for the selected month.
 
-Example:
+Remaining:
 
-The system notices that the user repeatedly records:
+> Monthly income - monthly expenses
 
-Rent — RM560 — monthly
+Category spending:
 
-The AI may suggest:
+> Sum expense transactions for a specific category in the selected month.
 
-"This looks like a recurring expense. Would you like to add it as a recurring expense?"
+Budget remaining:
 
-The user must confirm before the recurring expense is created.
+> Category budget - category spending
 
-### Required principle
+Do NOT store an independent "remaining money" value.
 
-AI detection must never automatically create recurring expenses without user confirmation.
+Remaining money must be calculated dynamically.
 
-The flow should be:
-
-Detect → Explain → Ask → User confirms → Create
+Calculations must be deterministic and testable.
 
 ---
 
-## 9. Savings Goals
+# 12. Budget System
 
-Users can create their own savings goals.
+Users can create category-based monthly budgets.
 
-Example:
+Use a `budgets` table.
 
-Goal:
-Emergency Fund
+## Budget fields
 
-Target:
-RM5,000
+* `id`
+* `user_id`
+* `category`
+* `amount`
+* `month`
+* `created_at`
+* `updated_at`
 
-Current:
-RM1,500
+There should be only one budget for a specific:
 
-The application should eventually support:
+> user + category + month
 
-* Custom goal name
+Users can:
+
+* Create budgets
+* Edit budgets
+* View budgets
+
+The application calculates:
+
+* Budget amount
+* Amount spent
+* Amount remaining
+
+Do NOT store budget remaining as an independent value.
+
+If spending exceeds the budget, display a clear warning.
+
+---
+
+# 13. Savings Goals
+
+Users can create savings goals.
+
+Use a `savings_goals` table.
+
+## Savings goal fields
+
+* `id`
+* `user_id`
+* `name`
+* `target_amount`
+* `current_amount`
+* `target_date`
+* `created_at`
+* `updated_at`
+
+Required:
+
+* Goal name
 * Target amount
-* Current progress
-* Optional target date
-* Goal editing
-* Progress visualization
+* Current amount
 
-A future version may include a reward/gamification system to encourage consistent saving.
+Optional:
 
-The reward system is NOT required for the initial V1.
+* Target date
 
----
+Users can edit savings goals.
 
-## 10. AI Assistant
+The application should display progress toward the goal.
 
-The AI assistant is intended to help users understand their financial data.
-
-The AI should eventually support natural-language questions such as:
-
-* "How much did I spend on food this month?"
-* "Where did most of my money go?"
-* "Why did my spending increase?"
-* "What can I improve next month?"
-* "What should I pay attention to?"
-* "Help me create a saving plan."
-* "Can I save RM500 next month based on my spending?"
-
-### V1 AI Feature
-
-The first AI feature should be:
-
-* Monthly spending summary
-
-Additional AI capabilities can be added after the core application works reliably.
-
-Potential future capabilities:
-
-* Natural-language financial questions
-* Spending analysis
-* Identify unusual spending patterns
-* Compare months
-* Suggest areas to pay attention to
-* Personalized saving plans
-* Recurring expense detection
-* Savings goal assistance
+Advanced reward/gamification systems are deferred.
 
 ---
 
-## 11. AI Safety Principles
+# 14. Recurring Expenses
 
-AI is an assistant, not the financial decision-maker.
+Recurring expense management is NOT part of the initial V1 implementation.
 
-AI may:
+Future concept:
 
-* Analyze
-* Summarize
-* Explain
-* Identify patterns
-* Calculate
-* Suggest
+> Detect → Explain → Ask → User confirms → Create
 
-AI must not silently make financial changes.
+AI must never silently create recurring expenses.
 
-For actions that modify application data, the preferred flow is:
+Recurring expenses may be considered for a future version.
 
-AI proposes → User reviews → User confirms → Application performs action
+---
 
-The AI must not invent financial data.
+# 15. AI Assistant
 
-If the available information is insufficient, the AI should say that it does not have enough information rather than guessing.
+V1 will NOT contain unrestricted free-form AI chat.
 
-The AI should clearly distinguish:
+Instead, V1 uses controlled:
 
-* Actual data
-* Calculations
-* Observations
-* Suggestions
-* Uncertainty
+> **Monthly Financial Analysis**
+
+The application retrieves the user's relevant financial data.
+
+The application calculates exact financial values.
+
+Only necessary information is sent to Gemini.
+
+Gemini explains the financial patterns in a user-friendly way.
 
 Example:
 
-Fact:
-"You spent RM820 on food this month."
+```text
+User
+↓
+Finance App
+↓
+Retrieve transactions
+↓
+Calculate exact financial values
+↓
+Prepare limited analysis data
+↓
+Gemini
+↓
+Financial explanation
+↓
+User
+```
 
-Observation:
-"Food was one of your largest spending categories."
-
-Suggestion:
-"You could consider reviewing your food spending next month."
-
-Suggestions must not be presented as guaranteed outcomes.
-
----
-
-## 12. Financial Advice Boundary
-
-The application is primarily for financial tracking, organization, and analysis.
-
-The AI should not present itself as a professional financial adviser.
-
-For topics involving investments, loans, taxes, insurance, cryptocurrency, or other complex financial decisions, the application should provide appropriate caution and avoid presenting uncertain information as guaranteed financial advice.
-
-Investment and cryptocurrency tracking are NOT part of V1.
+AI must not be responsible for core financial calculations.
 
 ---
 
-## 13. Privacy and Security
+# 16. AI Provider and Free Tier
 
-Financial information is sensitive.
+The application uses the Gemini API Free Tier.
 
-The application should minimize unnecessary collection, storage, transmission, and logging of sensitive information.
+Important distinction:
 
-The application must NOT request or store:
+* Rakyat Digital Gemini is a development/coding resource.
+* The Finance AI App uses its own Gemini API configuration.
 
-* Bank passwords
-* Bank login credentials
-* Crypto exchange passwords
-* Crypto wallet private keys
-* Payment account credentials
+Rakyat Digital access must not be required for the deployed application to function.
 
-API keys and secrets must never be placed directly in frontend source code or committed to GitHub.
+The application must not depend on Rakyat Digital remaining available forever.
 
-Environment variables or an appropriate secret-management approach must be used.
+The application must not promise unlimited AI usage.
 
-Sensitive data should not be unnecessarily written to application logs.
+If Gemini becomes unavailable or its free-tier quota is exhausted:
 
-Real personal financial data should not be committed to the public GitHub repository.
-
-Development and testing should use fake/test data whenever possible.
+* Core financial features must continue working.
+* AI analysis should show an appropriate unavailable/error message.
+* The application must not automatically create paid billing.
 
 ---
 
-## 14. Reliability Principles
+# 17. AI Actions and User Confirmation
 
-The core finance application should remain usable even when AI is unavailable.
+AI is advisory only.
 
-AI failure must not prevent the user from:
+AI must never silently:
 
-* Viewing transactions
-* Adding transactions
-* Editing transactions
-* Deleting transactions
-* Viewing the dashboard
-* Viewing budgets
-* Viewing savings goals
+* Create transactions
+* Edit transactions
+* Delete transactions
+* Change budgets
+* Change savings goals
+* Create recurring expenses
+* Move money
+* Execute financial transactions
 
-The application should handle:
+Future AI actions that modify data must follow:
+
+> AI proposes → User reviews → User confirms → Application performs action
+
+---
+
+# 18. Privacy and Security
+
+The application must use:
+
+* Supabase Authentication
+* Supabase Row Level Security
+* Server-side handling of API keys
+* Environment variables
+* Input validation
+* Database constraints where appropriate
+* HTTPS through deployment platform
+
+Secrets must never be committed to GitHub.
+
+`.env` files containing secrets must be excluded from Git.
+
+No real personal financial data should be committed to GitHub.
+
+Development should use fake/test data where appropriate.
+
+The application should avoid unnecessary sensitive logging.
+
+---
+
+# 19. Reliability Requirements
+
+The application must handle:
 
 * Invalid amounts
 * Missing required fields
 * Invalid dates
 * Duplicate submissions
 * Accidental deletion
-* Network failures
-* AI failures
-* Database failures
+* Network failure
+* Database failure
+* AI failure
+* AI quota exhaustion
 * Missing data
+* Invalid AI responses
 
-Financial calculations should be performed by reliable application logic rather than relying on the AI to calculate important totals.
-
----
-
-## 15. Mobile-first Requirement
-
-The primary target device is a phone.
-
-The application should therefore prioritize:
-
-* Mobile-friendly layout
-* Fast expense entry
-* Large and usable buttons
-* Easy-to-read dashboard
-* Responsive charts
-* Simple forms
-* Easy editing
-* Minimal unnecessary navigation
-
-The user should be able to record an expense quickly after spending money.
+The core finance application must remain usable when AI is unavailable.
 
 ---
 
-## 16. Multi-user Support
+# 20. PWA / Mobile Requirements
 
-Multi-user functionality is a future feature.
+The application should be mobile-first.
 
-The long-term goal is potentially allowing friends and family to use the application independently.
+It must eventually support installation as a PWA.
 
-However:
+The intended experience is:
 
-* Multi-user functionality is NOT required for V1.
-* Users must not share financial data with other users.
-* One user's data must not be visible to another user.
-* Authentication and authorization must be properly designed before multi-user support is implemented.
+1. Open the web application on iPhone
+2. Add it to the Home Screen
+3. Launch it from the Home Screen like an app
 
-The future multi-user architecture must not compromise the original privacy principle.
+A native App Store application is NOT required for V1.
+
+The Vercel-provided domain can be used initially.
+
+A custom domain is not required for V1.
 
 ---
 
-## 17. Features Explicitly Deferred
+# 21. Multi-User Support
 
-The following are NOT part of V1:
+The application is designed for multiple separate users.
 
-* Payment method tracking
-* Transaction search
-* CSV import/export
-* Receipt scanning
-* Investment tracking
-* Cryptocurrency tracking
-* Bank integration
-* Crypto exchange integration
-* Automatic financial transaction synchronization
-* Financial transaction execution
-* Multi-user accounts
-* Advanced reward/gamification system
+Each user must only see their own:
+
+* Transactions
+* Budgets
+* Savings goals
+* AI analysis data
+
+Multi-user support does NOT mean connecting multiple bank accounts.
+
+---
+
+# 22. Features Explicitly Deferred
+
+The following are intentionally outside initial V1 scope:
+
+* Bank integrations
+* Automatic transaction synchronization
+* Crypto exchange integrations
+* Wallet integrations
+* Payment execution
+* Money transfers
+* Investment execution
+* Free-form AI chat
+* Automatic recurring-expense creation
 * Advanced AI agents
-* Complex automation systems
+* n8n automation
+* MCP integrations
+* Complex financial forecasting
+* Advanced gamification
+* Native iOS application
+* Custom domain
+* Paid services
 
-These may be reconsidered after V1.
+These may be considered only after V1 is working.
 
 ---
 
-## 18. Development Philosophy
+# 23. Development Philosophy
 
-The project should prioritize:
+The project follows:
 
-1. Working software
-2. Understanding
-3. Safety
-4. Reliability
-5. Simplicity
-6. Maintainability
-7. Features
+> **Learn → Build → Show → Improve → Automate**
 
-A smaller finished application is preferable to a large unfinished application.
+Development principle:
 
-AI coding assistants may write code, but the project owner remains responsible for understanding, reviewing, testing, and deciding what gets implemented.
+> **AI writes. I understand. I decide. I test. Git protects.**
 
-Core development workflow:
+The purpose of using AI coding tools is to accelerate development while still understanding what is being built.
 
-Plan → One change → Test → Commit
+---
+
+# 24. AI Coding Rules
+
+The AI coding assistant should:
+
+1. Read `PROJECT_SPEC.md`
+2. Read `V1_CHECKLIST.md`
+3. Understand the existing project structure
+4. Explain relevant architecture when necessary
+5. Make the smallest reasonable change
+6. Preserve working functionality
+7. Avoid unnecessary rewrites
+8. Avoid unnecessary dependencies
+9. Avoid unnecessary services
+10. Test changes
+11. Report what changed
+12. Never expose secrets
+13. Never add financial integrations without explicit approval
+
+Before introducing a new library, service, framework, or architecture:
+
+> Explain why it is needed first.
+
+---
+
+# 25. Git Safety
+
+Git is used as a safety system and project history.
+
+Development workflow:
+
+> Plan → One meaningful change → Test → Review → Commit
 
 If something breaks:
 
-Investigate → Understand the cause → Fix the specific problem → Test again
+> Investigate → Understand cause → Fix specific issue → Test again
 
-Do not repeatedly ask an AI coding assistant to "fix everything" without understanding the problem.
+Important milestones should be committed separately.
 
----
+Do not make large unrelated changes in one commit.
 
-## 19. AI Coding Rules
+Do not commit:
 
-Before modifying the project, an AI coding assistant should:
-
-1. Read this file.
-2. Read V1_CHECKLIST.md.
-3. Understand the existing project structure.
-4. Explain the relevant existing architecture when necessary.
-5. Avoid unnecessary rewrites.
-6. Make the smallest reasonable change.
-7. Preserve existing working functionality.
-8. Test the change.
-9. Report what changed.
-
-An AI coding assistant must not introduce a new library, framework, service, database, API, or architectural pattern without a reasonable project-specific reason.
-
-Before creating a new project file, consider whether an existing file can reasonably handle the requirement without becoming unnecessarily complicated.
+* API keys
+* Passwords
+* `.env` secrets
+* Real financial data
+* Other sensitive credentials
 
 ---
 
-## 20. Git Safety
+# 26. Current Project Status
 
-Git is the project's safety net.
+The following foundation work has already been completed:
 
-Before significant changes:
+* [x] Finance AI App project created
+* [x] Project opened in VS Code
+* [x] Git initialized
+* [x] GitHub repository created
+* [x] Local repository connected to GitHub
+* [x] README created
+* [x] Initial project setup committed
+* [x] Initial commit pushed to GitHub
+* [x] `PROJECT_SPEC.md` created
+* [x] `V1_CHECKLIST.md` created
+* [x] Core product boundary defined
+* [x] V1 architecture planned
+* [x] Zero-cost requirement defined
+* [x] Authentication approach decided
+* [x] Database architecture decided
+* [x] AI approach decided
+* [x] PWA requirement decided
+* [x] Development workflow defined
 
-1. Ensure the application is working.
-2. Commit the working state.
-3. Make one meaningful change.
-4. Test.
-5. Commit if successful.
-
-Small, meaningful commits are preferred over large unrelated commits.
-
----
-
-## 21. Definition of V1
-
-V1 is considered complete when the user can:
-
-1. Open the application on a phone.
-2. View the dashboard.
-3. Add an expense.
-4. Add income.
-5. Edit a transaction.
-6. Change an incorrectly entered date.
-7. Delete a transaction safely.
-8. Categorize spending.
-9. Select a meal type for food.
-10. View monthly income.
-11. View monthly expenses.
-12. View remaining money.
-13. View category spending.
-14. View spending charts.
-15. Create category budgets.
-16. See remaining budget.
-17. Receive an overspending warning.
-18. Create a savings goal.
-19. View savings progress.
-20. Ask the AI about monthly spending.
-21. Receive an analysis based on actual application data.
-22. Receive suggestions without the AI making decisions on the user's behalf.
-23. Continue using the core finance features if the AI service is unavailable.
-24. Use the application without providing bank, crypto, payment, or investment account credentials.
-
-V1 must also pass a safety and reliability review before being considered finished.
+The architecture/specification files themselves should be committed as a separate checkpoint after final review.
 
 ---
 
-## 22. V1 Review
+# 27. V1 Definition
 
-After V1 is complete, do not immediately begin V2.
+V1 is considered complete when the following are working:
 
-Perform a V1 review:
-
-* What did we plan?
-* What did we actually build?
-* What did we forget?
-* What features were unnecessary?
-* What was difficult?
-* What bugs remain?
-* What safety risks remain?
-* What privacy risks remain?
-* What parts of the user experience are frustrating?
-* What should be improved?
-* What should be removed?
-* What should become V1.1?
-* What did we learn about building software with AI?
-
-Only after this review should the next development phase be planned.
+* User sign up
+* User login/logout
+* User-specific data isolation
+* Add expense
+* Add income
+* Edit transaction
+* Delete transaction with confirmation
+* Monthly dashboard
+* Monthly income calculation
+* Monthly expense calculation
+* Remaining money calculation
+* Category spending
+* Spending chart
+* Category budgets
+* Budget progress
+* Savings goals
+* PWA installation
+* Controlled monthly AI financial analysis
+* AI failure/quota handling
+* Security validation
+* Basic reliability testing
+* Deployment
 
 ---
 
-## 23. Permanent Product Boundary
+# 28. Permanent Project Rule
 
-The following statement is a permanent project rule:
+> **Finance AI App helps users TRACK, UNDERSTAND, and IMPROVE their financial habits. It does not MOVE, CONTROL, or EXECUTE their money.**
 
-> Finance AI App helps users TRACK, UNDERSTAND, and IMPROVE their financial habits. It does not MOVE, CONTROL, or EXECUTE their money.
-
-Any future feature that could potentially violate this principle must be reviewed before implementation.
+This rule applies to all future versions unless the project scope is deliberately redefined.

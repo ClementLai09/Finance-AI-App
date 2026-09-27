@@ -1,454 +1,499 @@
-# Finance AI App — V1 Checklist
+# Finance AI App — V1 Development Checklist
 
-This is the master checklist for completing V1.
-
-Use this file to track progress.
-
-Do not mark an item complete unless it has been implemented and tested.
+> **Status rule:** Only mark a task `[x]` after it has actually been completed and verified.
+> Discussing, planning, or deciding something does not count as completion.
 
 ---
 
-# 1. Project Setup
+# Phase 0 — Project Foundation
 
-* [x] VS Code installed
-* [x] Git installed
-* [x] GitHub account ready
-* [x] Git repository created
-* [x] GitHub repository connected
-* [x] README.md created
-* [x] Initial Git commit created
-* [ ] PROJECT_SPEC.md created
-* [ ] V1_CHECKLIST.md created
-* [ ] Commit project documentation
-* [ ] Choose technology stack
-* [ ] Define application architecture
-* [ ] Define database/storage approach
-* [ ] Create initial application structure
-* [ ] Run initial application successfully
+## Project Setup
 
----
+* [x] Create Finance AI App project
+* [x] Create project folder
+* [x] Open project in VS Code
+* [x] Initialize Git
+* [x] Create GitHub repository
+* [x] Connect local repository to GitHub
+* [x] Create README
+* [x] Create initial project files
+* [x] Make initial Git commit
+* [x] Push initial commit to GitHub
 
-# 2. Mobile Foundation
+## Project Planning
 
-* [ ] Mobile-first layout
-* [ ] Responsive design
-* [ ] Dashboard usable on phone
-* [ ] Add Expense flow usable on phone
-* [ ] Add Income flow usable on phone
-* [ ] Forms are easy to use
-* [ ] Buttons are easy to tap
-* [ ] Charts are readable on phone
-* [ ] Navigation is simple
-
----
-
-# 3. Expense Transactions
-
-## Add Expense
-
-* [ ] Add Expense screen
-* [ ] Amount field
-* [ ] Category selection
-* [ ] Food meal selection
-* [ ] Date field
-* [ ] Date defaults to today
-* [ ] Date can be changed
-* [ ] Optional notes
-* [ ] Save transaction
-* [ ] Successful save confirmation
-* [ ] Dashboard updates after saving
-
-## Validation
-
-* [ ] Amount cannot be invalid
-* [ ] Required fields are validated
-* [ ] Invalid input shows a useful message
-* [ ] Duplicate submission is prevented
-
-## Edit
-
-* [ ] Edit transaction
-* [ ] Edit amount
-* [ ] Edit category
-* [ ] Edit meal type
-* [ ] Edit date
-* [ ] Edit notes
-* [ ] Save changes
-* [ ] Dashboard recalculates after editing
-
-## Delete
-
-* [ ] Delete transaction
-* [ ] Confirmation before deletion
-* [ ] Transaction is removed correctly
-* [ ] Dashboard recalculates after deletion
+* [x] Define project purpose
+* [x] Define core product boundary
+* [x] Decide V1 scope
+* [x] Decide V1 technology stack
+* [x] Decide zero-cost requirement
+* [x] Decide authentication approach
+* [x] Decide database architecture
+* [x] Decide AI architecture
+* [x] Decide PWA requirement
+* [x] Decide security requirements
+* [x] Create `PROJECT_SPEC.md`
+* [x] Create `V1_CHECKLIST.md`
+* [ ] Review and commit finalized `PROJECT_SPEC.md`
+* [ ] Review and commit finalized `V1_CHECKLIST.md`
 
 ---
 
-# 4. Income Transactions
+# Phase 1 — Application Development Setup
 
-* [ ] Add Income screen
-* [ ] Manual income amount
-* [ ] Income category
-* [ ] Income date
-* [ ] Editable income date
-* [ ] Optional notes
-* [ ] Save income
-* [ ] Edit income
-* [ ] Delete income
-* [ ] Dashboard updates correctly
+## Next.js
 
-Income must remain flexible and must NOT be hard-coded to a fixed salary.
-
----
-
-# 5. Categories
-
-* [ ] Initial expense categories
-* [ ] Initial income categories
-* [ ] Food category
-* [ ] Meal types
-* [ ] Category stored correctly
-* [ ] Category displayed correctly
-* [ ] Architecture allows future custom categories
-
----
-
-# 6. Dashboard
-
-* [ ] Monthly income
-* [ ] Monthly expenses
-* [ ] Remaining money
-* [ ] Category spending
-* [ ] Recent transactions
-* [ ] Spending chart
-* [ ] Category breakdown
-* [ ] Dashboard updates automatically
-* [ ] Correct month selected
-* [ ] Correct totals displayed
-
-### Calculation
-
-* [ ] Remaining money = income - expenses
-* [ ] Calculations use actual transaction data
-* [ ] No duplicated/inconsistent calculation source
-
----
-
-# 7. Category Budgets
-
-* [ ] Create category budget
-* [ ] Edit category budget
-* [ ] View category budget
-* [ ] Calculate category spending
-* [ ] Calculate budget remaining
-* [ ] Detect overspending
-* [ ] Display overspending warning
-* [ ] Budget updates when transaction changes
-* [ ] Budget updates when transaction is deleted
-
----
-
-# 8. Savings Goals
-
-* [ ] Create savings goal
-* [ ] Custom goal name
-* [ ] Target amount
-* [ ] Current amount/progress
-* [ ] Optional target date
-* [ ] Edit goal
-* [ ] View goal
-* [ ] Display progress
-* [ ] Validate goal amounts
-
-### Deferred
-
-* [ ] Reward/gamification system — V1.1/V2
-
----
-
-# 9. Recurring Expenses
-
-* [ ] Define recurring expense structure
-* [ ] Store recurring expense information
-* [ ] Detect potential recurring patterns
-* [ ] Explain why an expense appears recurring
-* [ ] Ask user for confirmation
-* [ ] User can reject suggestion
-* [ ] User can confirm suggestion
-* [ ] Only create recurring expense after confirmation
-
-### Safety requirement
-
-* [ ] AI cannot silently create recurring expenses
-
----
-
-# 10. AI Assistant
-
-## V1 AI
-
-* [ ] Select AI model/service
-* [ ] Secure AI API configuration
-* [ ] Connect application to AI
-* [ ] Send relevant financial data to AI
-* [ ] Monthly spending summary
-* [ ] AI response displayed clearly
-* [ ] AI response based on actual application data
-* [ ] Handle AI unavailable/error state
-
-## Future AI
-
-* [ ] Ask questions about spending
-* [ ] Natural-language financial questions
-* [ ] Identify unusual spending
-* [ ] Compare months
-* [ ] Suggest areas to pay attention to
-* [ ] Personalized saving plans
-* [ ] Recurring expense detection
-* [ ] Savings goal assistance
-* [ ] AI-assisted actions with user confirmation
-
----
-
-# 11. AI Safety
-
-* [ ] AI cannot access bank accounts
-* [ ] AI cannot access crypto accounts
-* [ ] AI cannot access payment accounts
-* [ ] AI cannot execute financial transactions
-* [ ] AI cannot transfer money
-* [ ] AI cannot buy/sell investments
-* [ ] AI cannot buy/sell crypto
-* [ ] AI cannot silently modify financial records
-* [ ] AI cannot silently create recurring expenses
-* [ ] AI cannot silently modify budgets
-* [ ] AI cannot silently modify savings goals
-* [ ] AI cannot delete transactions without user confirmation
-* [ ] AI does not invent financial data
-* [ ] AI distinguishes facts from suggestions
-* [ ] AI indicates uncertainty when appropriate
-* [ ] AI does not present itself as a professional financial adviser
-* [ ] AI failure does not break the core finance application
-
----
-
-# 12. Privacy & Security
-
-* [ ] No bank credentials requested
-* [ ] No crypto exchange credentials requested
-* [ ] No wallet private keys requested
-* [ ] No payment account credentials requested
-* [ ] No bank API integration
-* [ ] No crypto API integration
-* [ ] No transaction execution capability
-* [ ] API keys stored securely
-* [ ] API keys not included in frontend code
-* [ ] .env protected
-* [ ] .env excluded from Git
-* [ ] No secrets committed to GitHub
-* [ ] No unnecessary sensitive data in logs
-* [ ] Test data used during development
-* [ ] Real financial data not committed to GitHub
-* [ ] User data access rules reviewed
-* [ ] Privacy boundaries reviewed before V1 release
-
----
-
-# 13. Reliability
-
-* [ ] Invalid amounts handled
-* [ ] Missing fields handled
-* [ ] Invalid dates handled
-* [ ] Duplicate submissions handled
-* [ ] Delete confirmation works
-* [ ] Network failure handled
-* [ ] AI failure handled
-* [ ] Database failure handled
-* [ ] Missing data handled
-* [ ] Application does not crash on expected invalid input
-* [ ] Core finance features work without AI
-* [ ] Financial calculations independently verified
-* [ ] Existing functionality tested after major changes
-
----
-
-# 14. Testing
-
-## Transaction Tests
-
-* [ ] Add normal expense
-* [ ] Add food expense
-* [ ] Add non-food expense
-* [ ] Add income
-* [ ] Edit expense
-* [ ] Edit income
-* [ ] Change transaction date
-* [ ] Delete transaction
-* [ ] Enter invalid amount
-* [ ] Submit incomplete form
-* [ ] Test duplicate submission
-
-## Dashboard Tests
-
-* [ ] Income total correct
-* [ ] Expense total correct
-* [ ] Remaining money correct
-* [ ] Category totals correct
-* [ ] Charts match transaction data
-* [ ] Dashboard updates after adding transaction
-* [ ] Dashboard updates after editing transaction
-* [ ] Dashboard updates after deleting transaction
-
-## Budget Tests
-
-* [ ] Budget under limit
-* [ ] Budget reaches limit
-* [ ] Budget exceeds limit
-* [ ] Budget updates after transaction edit
-* [ ] Budget updates after transaction deletion
-
-## Savings Tests
-
-* [ ] Create goal
-* [ ] Edit goal
-* [ ] Correct progress displayed
-* [ ] Invalid goal amount handled
-
-## AI Tests
-
-* [ ] AI receives correct data
-* [ ] AI does not invent totals
-* [ ] AI answers using actual transaction data
-* [ ] AI handles insufficient data
-* [ ] AI failure handled
-* [ ] AI suggestions clearly identified
-* [ ] AI cannot perform unauthorized actions
-
----
-
-# 15. Git Checkpoints
-
-Before significant development:
-
-* [ ] Commit clean project state
-
-After each meaningful feature:
-
-* [ ] Test feature
-* [ ] Review changes
-* [ ] Commit feature
-
-Before major architectural changes:
-
+* [ ] Create Next.js application
+* [ ] Configure TypeScript
+* [ ] Configure Tailwind CSS
+* [ ] Confirm application runs locally
+* [ ] Confirm development server works
+* [ ] Create basic project structure
+* [ ] Create initial application layout
+* [ ] Create basic navigation
 * [ ] Create Git checkpoint
-* [ ] Verify application works
-* [ ] Make change
-* [ ] Test
-* [ ] Commit or revert
+
+## Development Tools
+
+* [ ] Install/configure required dependencies only
+* [ ] Configure environment variables
+* [ ] Create `.env.local`
+* [ ] Create/update `.gitignore`
+* [ ] Confirm secrets are excluded from Git
+* [ ] Confirm project builds successfully
+* [ ] Create Git checkpoint
 
 ---
 
-# 16. V1 Completion Test
+# Phase 2 — Supabase Setup
 
-The following complete user journey must work:
+## Supabase Project
 
-* [ ] Open app
-* [ ] View dashboard
-* [ ] Add an expense
-* [ ] Enter amount
-* [ ] Select category
-* [ ] Select meal if Food
-* [ ] Date defaults to today
-* [ ] Change date
-* [ ] Add notes
+* [ ] Create Supabase project
+* [ ] Confirm project is using the free tier
+* [ ] Connect application to Supabase
+* [ ] Configure Supabase environment variables
+* [ ] Test Supabase connection
+* [ ] Create Git checkpoint
+
+## Authentication
+
+* [ ] Configure Supabase Auth
+* [ ] Create sign-up screen
+* [ ] Create login screen
+* [ ] Create logout functionality
+* [ ] Handle invalid login
+* [ ] Handle invalid sign-up
+* [ ] Handle authentication state
+* [ ] Protect authenticated pages
+* [ ] Redirect unauthenticated users appropriately
+* [ ] Test authentication
+* [ ] Create Git checkpoint
+
+---
+
+# Phase 3 — Database
+
+## Transactions
+
+* [ ] Create `transactions` table
+* [ ] Add `id`
+* [ ] Add `user_id`
+* [ ] Add `type`
+* [ ] Add `amount`
+* [ ] Add `category`
+* [ ] Add `meal_type`
+* [ ] Add `date`
+* [ ] Add `notes`
+* [ ] Add `created_at`
+* [ ] Add `updated_at`
+* [ ] Add appropriate constraints
+* [ ] Test transaction creation
+
+## Budgets
+
+* [ ] Create `budgets` table
+* [ ] Add `id`
+* [ ] Add `user_id`
+* [ ] Add `category`
+* [ ] Add `amount`
+* [ ] Add `month`
+* [ ] Add timestamps
+* [ ] Add user/category/month uniqueness rule
+* [ ] Test budget creation
+
+## Savings Goals
+
+* [ ] Create `savings_goals` table
+* [ ] Add `id`
+* [ ] Add `user_id`
+* [ ] Add `name`
+* [ ] Add `target_amount`
+* [ ] Add `current_amount`
+* [ ] Add `target_date`
+* [ ] Add timestamps
+* [ ] Test savings goal creation
+
+## Database Security
+
+* [ ] Enable Row Level Security
+* [ ] Create transaction RLS policies
+* [ ] Create budget RLS policies
+* [ ] Create savings-goal RLS policies
+* [ ] Verify users cannot access another user's records
+* [ ] Test RLS with multiple test users
+* [ ] Create Git checkpoint
+
+---
+
+# Phase 4 — Transactions
+
+## Expense Transactions
+
+* [ ] Create Add Expense UI
+* [ ] Amount field
+* [ ] Category selector
+* [ ] Meal type selector
+* [ ] Date selector
+* [ ] Notes field
+* [ ] Default date to today
+* [ ] Validate required fields
 * [ ] Save expense
-* [ ] Dashboard updates
-* [ ] Add income
-* [ ] Dashboard updates
+* [ ] Display success/error state
+* [ ] Prevent duplicate submission
+* [ ] Test expense creation
+
+## Income Transactions
+
+* [ ] Create Add Income UI
+* [ ] Amount field
+* [ ] Income category selector
+* [ ] Date selector
+* [ ] Notes field
+* [ ] Validate required fields
+* [ ] Save income
+* [ ] Display success/error state
+* [ ] Test income creation
+
+## Transaction Management
+
+* [ ] Display transactions
 * [ ] Edit transaction
-* [ ] Dashboard recalculates
 * [ ] Delete transaction
-* [ ] Dashboard recalculates
-* [ ] Create category budget
-* [ ] View budget remaining
-* [ ] Trigger overspending warning
-* [ ] Create savings goal
-* [ ] View savings progress
-* [ ] Ask AI about spending
-* [ ] Receive data-based AI analysis
-* [ ] Receive improvement suggestions
-* [ ] Core application continues working if AI is unavailable
+* [ ] Require deletion confirmation
+* [ ] Handle failed updates
+* [ ] Handle failed deletion
+* [ ] Confirm edited dates update calculations
+* [ ] Test transaction management
+* [ ] Create Git checkpoint
 
 ---
 
-# 17. V1 Safety Review
+# Phase 5 — Dashboard
+
+## Dashboard Data
+
+* [ ] Create dashboard page
+* [ ] Add month selector
+* [ ] Calculate monthly income
+* [ ] Calculate monthly expenses
+* [ ] Calculate remaining money
+* [ ] Display recent transactions
+* [ ] Display category spending
+
+## Charts
+
+* [ ] Install/configure Recharts
+* [ ] Create spending chart
+* [ ] Create category spending visualization
+* [ ] Confirm charts use real database calculations
+* [ ] Handle empty data state
+
+## Dashboard Reliability
+
+* [ ] Test month with no transactions
+* [ ] Test month with income only
+* [ ] Test month with expenses only
+* [ ] Test month with income and expenses
+* [ ] Test editing transaction dates
+* [ ] Test deleting transactions
+* [ ] Test multiple categories
+* [ ] Create Git checkpoint
+
+---
+
+# Phase 6 — Budgets
+
+* [ ] Create budget UI
+* [ ] Select category
+* [ ] Enter monthly budget
+* [ ] Select month
+* [ ] Save budget
+* [ ] Edit budget
+* [ ] Display budget amount
+* [ ] Calculate amount spent
+* [ ] Calculate amount remaining
+* [ ] Display progress
+* [ ] Display overspending warning
+* [ ] Prevent duplicate category/month budgets
+* [ ] Test budgets
+* [ ] Create Git checkpoint
+
+---
+
+# Phase 7 — Savings Goals
+
+* [ ] Create savings goal UI
+* [ ] Enter goal name
+* [ ] Enter target amount
+* [ ] Enter current amount
+* [ ] Optional target date
+* [ ] Save goal
+* [ ] Edit goal
+* [ ] Display goal progress
+* [ ] Handle invalid amounts
+* [ ] Test savings goals
+* [ ] Create Git checkpoint
+
+---
+
+# Phase 8 — AI Assistant
+
+## Gemini Setup
+
+* [ ] Create Gemini API configuration
+* [ ] Confirm free-tier usage
+* [ ] Store API key securely
+* [ ] Never expose API key to client
+* [ ] Never commit API key to GitHub
+* [ ] Test API connection
+* [ ] Create Git checkpoint
+
+## Monthly Financial Analysis
+
+* [ ] Create monthly analysis UI
+* [ ] Retrieve relevant financial data
+* [ ] Calculate exact financial values in application logic
+* [ ] Prepare limited AI input
+* [ ] Send appropriate data to Gemini
+* [ ] Receive AI analysis
+* [ ] Display analysis
+* [ ] Handle empty financial data
+* [ ] Handle invalid AI response
+* [ ] Handle Gemini failure
+* [ ] Handle free-tier quota exhaustion
+* [ ] Confirm core application still works when AI fails
+* [ ] Test AI analysis
+* [ ] Create Git checkpoint
+
+## AI Safety
+
+* [ ] AI cannot modify transactions automatically
+* [ ] AI cannot modify budgets automatically
+* [ ] AI cannot modify savings goals automatically
+* [ ] AI cannot create recurring expenses automatically
+* [ ] AI cannot move money
+* [ ] AI cannot execute financial transactions
+* [ ] No unrestricted free-form AI chat in V1
+* [ ] Confirm AI is advisory only
+
+---
+
+# Phase 9 — Validation & Security
+
+## Input Validation
+
+* [ ] Add Zod validation where appropriate
+* [ ] Validate amount
+* [ ] Validate category
+* [ ] Validate transaction type
+* [ ] Validate date
+* [ ] Validate budget amount
+* [ ] Validate savings goal amounts
+* [ ] Validate required fields
+* [ ] Handle malformed input
+
+## Security
+
+* [ ] Verify authentication protection
+* [ ] Verify RLS protection
+* [ ] Verify users cannot access other users' data
+* [ ] Verify API keys remain server-side
+* [ ] Verify `.env` is ignored
+* [ ] Search repository for accidentally committed secrets
+* [ ] Confirm no real financial data is committed
+* [ ] Review unnecessary logs
+
+---
+
+# Phase 10 — Reliability Testing
+
+* [ ] Test network failure
+* [ ] Test database failure
+* [ ] Test AI failure
+* [ ] Test AI quota exhaustion
+* [ ] Test duplicate form submission
+* [ ] Test invalid input
+* [ ] Test empty states
+* [ ] Test deletion confirmation
+* [ ] Test editing
+* [ ] Test monthly calculations
+* [ ] Test budget calculations
+* [ ] Test savings goal calculations
+* [ ] Test authentication failures
+
+---
+
+# Phase 11 — Mobile & PWA
+
+## Mobile UI
+
+* [ ] Test mobile layout
+* [ ] Test iPhone-sized screen
+* [ ] Test transaction forms on mobile
+* [ ] Test dashboard on mobile
+* [ ] Test charts on mobile
+* [ ] Fix overflow/layout issues
+* [ ] Confirm buttons and inputs are easy to use
+
+## PWA
+
+* [ ] Add PWA configuration
+* [ ] Add web app manifest
+* [ ] Add application icons
+* [ ] Configure installable experience
+* [ ] Test Add to Home Screen on iPhone
+* [ ] Test launching from Home Screen
+* [ ] Confirm HTTPS deployment
+
+---
+
+# Phase 12 — Deployment
+
+## Vercel
+
+* [ ] Create/connect Vercel project
+* [ ] Confirm Vercel Hobby/free configuration
+* [ ] Connect GitHub repository
+* [ ] Configure production environment variables
+* [ ] Deploy application
+* [ ] Confirm production application works
+* [ ] Confirm authentication works in production
+* [ ] Confirm database works in production
+* [ ] Confirm AI works in production
+* [ ] Confirm PWA works in production
+* [ ] Create Git checkpoint
+
+---
+
+# Phase 13 — V1 Completion Test
+
+The application must pass the following end-to-end test:
+
+## New User
+
+* [ ] Sign up
+* [ ] Log in
+* [ ] Reach dashboard
+
+## Transactions
+
+* [ ] Add income
+* [ ] Add expense
+* [ ] Edit transaction
+* [ ] Delete transaction
+* [ ] Confirm dashboard updates correctly
+
+## Dashboard
+
+* [ ] Monthly income is correct
+* [ ] Monthly expenses are correct
+* [ ] Remaining money is correct
+* [ ] Category spending is correct
+* [ ] Charts are correct
+
+## Budgets
+
+* [ ] Create budget
+* [ ] View budget
+* [ ] Edit budget
+* [ ] Overspending warning works
+
+## Savings
+
+* [ ] Create savings goal
+* [ ] View progress
+* [ ] Edit savings goal
+
+## AI
+
+* [ ] Generate monthly analysis
+* [ ] AI uses application-calculated financial values
+* [ ] AI cannot modify financial data automatically
+* [ ] AI failure does not break the core application
+
+## Security
+
+* [ ] User A cannot access User B's financial data
+* [ ] Secrets are not exposed
+* [ ] Secrets are not committed to GitHub
+
+## Mobile
+
+* [ ] Application works on mobile
+* [ ] Application can be installed as a PWA
+* [ ] Application launches from iPhone Home Screen
+
+## Deployment
+
+* [ ] Production deployment works
+* [ ] Production database works
+* [ ] Production authentication works
+* [ ] Production AI works
+* [ ] Production PWA works
+
+---
+
+# Phase 14 — V1 Safety Review
 
 Before declaring V1 complete:
 
-* [ ] Review PROJECT_SPEC.md
-* [ ] Review every safety requirement
-* [ ] Review privacy requirements
-* [ ] Test AI boundaries
-* [ ] Test invalid input
-* [ ] Test accidental deletion
-* [ ] Test AI failure
-* [ ] Test data calculation accuracy
-* [ ] Check GitHub for accidentally exposed secrets
-* [ ] Check that no bank/crypto/payment connection exists
-* [ ] Confirm application is tracking-only
-* [ ] Confirm user remains in control of financial decisions
+* [ ] No bank integrations
+* [ ] No crypto exchange integrations
+* [ ] No wallet integrations
+* [ ] No payment credentials
+* [ ] No bank passwords
+* [ ] No crypto private keys
+* [ ] No financial transaction execution
+* [ ] No automatic money movement
+* [ ] No automatic recurring expense creation
+* [ ] No unrestricted AI chat
+* [ ] No paid service required
+* [ ] No automatic paid billing
+* [ ] No secrets in GitHub
+* [ ] No real financial data in GitHub
 
 ---
 
-# 18. V1 Retrospective
+# Phase 15 — V1 Retrospective
 
-After V1 works, STOP development temporarily and review the project.
+After V1 works:
 
-## What did we plan?
-
-* [ ] Compare final application against PROJECT_SPEC.md
-
-## What did we miss?
-
-* [ ] Identify forgotten requirements
-* [ ] Identify unexpected problems
-
-## What should change?
-
-* [ ] User experience improvements
-* [ ] Safety improvements
-* [ ] Reliability improvements
-* [ ] Performance improvements
-* [ ] Architecture improvements
-
-## Feature review
-
-* [ ] Features that should be added
-* [ ] Features that should be removed
-* [ ] Features that should move to V1.1
-* [ ] Features that should remain deferred
-
-## AI review
-
-* [ ] What AI features were useful?
-* [ ] What AI features were unreliable?
-* [ ] What AI capabilities should be improved?
-* [ ] Are additional AI tools actually necessary?
-
-## Final decision
-
-* [ ] V1 retrospective completed
-* [ ] V1.1 scope defined
-* [ ] V2 ideas documented separately
-* [ ] No new feature started until review is complete
+* [ ] Document what was learned
+* [ ] Document major technical decisions
+* [ ] Document problems encountered
+* [ ] Document how problems were solved
+* [ ] Update README
+* [ ] Add screenshots
+* [ ] Add project architecture overview
+* [ ] Add setup instructions
+* [ ] Add deployed demo link
+* [ ] Review possible V1.5 features
+* [ ] Decide what should NOT be added
+* [ ] Create final V1 Git tag/checkpoint
 
 ---
 
-# 19. Permanent Project Rule
+# Permanent Project Rule
 
-> Track → Understand → Improve.
-
-The application records and analyzes financial activity.
-
-It does NOT move, control, or execute the user's money.
+> **Finance AI App helps users TRACK, UNDERSTAND, and IMPROVE their financial habits. It does not MOVE, CONTROL, or EXECUTE their money.**
