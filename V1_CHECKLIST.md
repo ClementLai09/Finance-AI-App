@@ -43,10 +43,10 @@
 
 ## Next.js
 
-* [ ] Create Next.js application
-* [ ] Configure TypeScript
+* [x] Create Next.js application
+* [x] Configure TypeScript
 * [ ] Configure Tailwind CSS
-* [ ] Confirm application runs locally
+* [x] Confirm application runs locally
 * [ ] Confirm development server works
 * [ ] Create basic project structure
 * [ ] Create initial application layout
