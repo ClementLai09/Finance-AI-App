@@ -78,7 +78,7 @@
 
 ## Authentication
 
-* [ ] Configure Supabase Auth
+* [x] Configure Supabase Auth
 * [ ] Create sign-up screen
 * [ ] Create login screen
 * [ ] Create logout functionality
