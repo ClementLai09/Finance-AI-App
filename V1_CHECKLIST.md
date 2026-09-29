@@ -69,10 +69,10 @@
 
 ## Supabase Project
 
-* [ ] Create Supabase project
+* [x] Create Supabase project
 * [ ] Confirm project is using the free tier
-* [ ] Connect application to Supabase
-* [ ] Configure Supabase environment variables
+* [x] Connect application to Supabase
+* [x] Configure Supabase environment variables
 * [ ] Test Supabase connection
 * [ ] Create Git checkpoint
 
