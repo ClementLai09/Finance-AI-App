@@ -1,11 +1,11 @@
-import { SectionPlaceholder } from "./components/section-placeholder";
+import { Suspense } from "react";
+import { DashboardContent } from "./dashboard-content";
+import { DashboardLoading } from "./dashboard-loading";
 
 export default function Home() {
   return (
-    <SectionPlaceholder
-      title="Dashboard"
-      description="A clear view of your monthly income, spending, and financial goals."
-      message="Your overview will appear here when finance tracking is set up. No financial data is connected yet."
-    />
+    <Suspense fallback={<DashboardLoading />}>
+      <DashboardContent />
+    </Suspense>
   );
 }
