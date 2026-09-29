@@ -369,10 +369,10 @@
 
 ## PWA
 
-* [ ] Add PWA configuration
-* [ ] Add web app manifest
-* [ ] Add application icons
-* [ ] Configure installable experience
+* [x] Add PWA configuration
+* [x] Add web app manifest
+* [x] Add application icons
+* [x] Configure installable experience
 * [ ] Test Add to Home Screen on iPhone
 * [ ] Test launching from Home Screen
 * [ ] Confirm HTTPS deployment
