@@ -8,6 +8,7 @@ import { LogoutButton } from "./logout-button";
 const sections = [
   { label: "Dashboard", href: "/" },
   { label: "Transactions", href: "/transactions" },
+  { label: "Categories", href: "/categories" },
   { label: "Budgets", href: "/budgets" },
   { label: "Savings Goals", href: "/savings-goals" },
   { label: "AI Analysis", href: "/ai-analysis" },

@@ -35,7 +35,7 @@ export async function updateSession(request: NextRequest) {
     pathname === "/login" || pathname === "/signup" || pathname === "/auth/callback";
   const isProtectedRoute =
     pathname === "/" ||
-    ["/transactions", "/budgets", "/savings-goals", "/ai-analysis"].some(
+    ["/transactions", "/categories", "/budgets", "/savings-goals", "/ai-analysis"].some(
       (route) => pathname === route || pathname.startsWith(`${route}/`),
     );
 
