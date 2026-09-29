@@ -138,13 +138,9 @@ The main V1 flow is:
 
 Income must be manually entered.
 
-Income categories:
-
-* Salary
-* Bonus
-* Freelance
-* Gift
-* Other
+Users create their own income categories. V1 does not require a fixed predefined
+income-category list. Users may create categories such as Salary, Bonus,
+Freelance, Gift, or Other if useful.
 
 Income must NOT be hardcoded to a specific salary.
 
@@ -156,14 +152,32 @@ The user may have different income amounts or multiple income transactions.
 
 Use one `transactions` table for both income and expenses.
 
+## Categories
+
+Users create their own categories for both income and expenses. Categories are
+owned by one user and have these fields:
+
+* `id` (UUID)
+* `user_id`
+* `name`
+* `type` (`income` or `expense`)
+* `is_archived` (boolean, default false)
+* `created_at`
+* `updated_at`
+
+Category names must be unique for each user and category type, ignoring leading
+and trailing whitespace and letter case. Archived categories cannot be selected
+for new transactions. Categories referenced by transactions must not be
+hard-deleted; archiving preserves historical transactions. Renaming a category
+changes its displayed name for historical transactions.
+
 ## Transaction fields
 
 * `id`
 * `user_id`
 * `type`
 * `amount`
-* `category`
-* `meal_type`
+* `category_id`
 * `date`
 * `notes`
 * `created_at`
@@ -176,39 +190,11 @@ Allowed values:
 * `expense`
 * `income`
 
-## Expense categories
-
-* Food
-* Rent
-* Transport
-* Petrol
-* Bills
-* Shopping
-* Entertainment
-* Health
-* Investment
-* Debt
-* Other
-
-## Income categories
-
-* Salary
-* Bonus
-* Freelance
-* Gift
-* Other
-
-## Food meal types
-
-If category is Food, the user may optionally select:
-
-* Breakfast
-* Lunch
-* Dinner
-* Snack
-* Other
-
-Meal type is only relevant to Food transactions.
+Each transaction references a category by `category_id`; category names are
+not stored as transaction text. The category and transaction must belong to the
+same user, and their types must match. Users who want more detail may create
+categories such as Breakfast, Lunch, or Dinner. V1 has no separate `meal_type`
+field.
 
 ## Transaction rules
 
@@ -216,12 +202,11 @@ Required:
 
 * Amount
 * Type
-* Category
+* Category (selected from the user's active categories of the matching type)
 * Date
 
 Optional:
 
-* Meal type
 * Notes
 
 Date should default to the current date but remain editable.
@@ -310,7 +295,7 @@ Use a `budgets` table.
 
 * `id`
 * `user_id`
-* `category`
+* `category_id` (an expense category owned by the same user)
 * `amount`
 * `month`
 * `created_at`
@@ -319,6 +304,9 @@ Use a `budgets` table.
 There should be only one budget for a specific:
 
 > user + category + month
+
+The month is represented by the first day of that month (for example,
+`2026-09-01`). Budgets apply only to expense categories.
 
 Users can:
 
@@ -541,6 +529,7 @@ The application is designed for multiple separate users.
 
 Each user must only see their own:
 
+* Categories
 * Transactions
 * Budgets
 * Savings goals

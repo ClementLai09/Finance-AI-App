@@ -94,6 +94,15 @@
 
 # Phase 3 — Database
 
+## Categories
+
+* [ ] Create `categories` table
+* [ ] Add `id` (UUID), `user_id`, `name`, `type`, `is_archived`, and timestamps
+* [ ] Restrict `type` to income or expense
+* [ ] Enforce case-insensitive name uniqueness per user and type after trimming whitespace
+* [ ] Prevent hard deletion of categories referenced by transactions
+* [ ] Ensure archived categories cannot be selected for new transactions
+
 ## Transactions
 
 * [ ] Create `transactions` table
@@ -101,13 +110,13 @@
 * [ ] Add `user_id`
 * [ ] Add `type`
 * [ ] Add `amount`
-* [ ] Add `category`
-* [ ] Add `meal_type`
+* [ ] Add `category_id`
 * [ ] Add `date`
 * [ ] Add `notes`
 * [ ] Add `created_at`
 * [ ] Add `updated_at`
 * [ ] Add appropriate constraints
+* [ ] Enforce transaction/category ownership and matching types
 * [ ] Test transaction creation
 
 ## Budgets
@@ -115,10 +124,12 @@
 * [ ] Create `budgets` table
 * [ ] Add `id`
 * [ ] Add `user_id`
-* [ ] Add `category`
+* [ ] Add `category_id` referencing the user's expense category
 * [ ] Add `amount`
 * [ ] Add `month`
+* [ ] Represent `month` as the first day of the month
 * [ ] Add timestamps
+* [ ] Restrict budgets to expense categories
 * [ ] Add user/category/month uniqueness rule
 * [ ] Test budget creation
 
@@ -137,11 +148,12 @@
 ## Database Security
 
 * [ ] Enable Row Level Security
+* [ ] Create category RLS policies
 * [ ] Create transaction RLS policies
 * [ ] Create budget RLS policies
 * [ ] Create savings-goal RLS policies
-* [ ] Verify users cannot access another user's records
-* [ ] Test RLS with multiple test users
+* [ ] Verify users cannot access another user's categories or records
+* [ ] Test multi-user isolation with multiple test users
 * [ ] Create Git checkpoint
 
 ---
@@ -153,7 +165,6 @@
 * [ ] Create Add Expense UI
 * [ ] Amount field
 * [ ] Category selector
-* [ ] Meal type selector
 * [ ] Date selector
 * [ ] Notes field
 * [ ] Default date to today
