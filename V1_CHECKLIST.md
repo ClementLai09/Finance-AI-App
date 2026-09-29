@@ -79,14 +79,14 @@
 ## Authentication
 
 * [x] Configure Supabase Auth
-* [ ] Create sign-up screen
-* [ ] Create login screen
-* [ ] Create logout functionality
-* [ ] Handle invalid login
-* [ ] Handle invalid sign-up
-* [ ] Handle authentication state
-* [ ] Protect authenticated pages
-* [ ] Redirect unauthenticated users appropriately
+* [x] Create sign-up screen
+* [x] Create login screen
+* [x] Create logout functionality
+* [x] Handle invalid login
+* [x] Handle invalid sign-up
+* [x] Handle authentication state
+* [x] Protect authenticated pages
+* [x] Redirect unauthenticated users appropriately
 * [ ] Test authentication
 * [ ] Create Git checkpoint
 
