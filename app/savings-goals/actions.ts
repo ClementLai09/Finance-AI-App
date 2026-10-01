@@ -2,68 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "../../lib/supabase/server";
+import { validateSavingsGoal } from "../../lib/finance/savings-goals";
 
 type ActionResult = { success: true; message: string } | { success: false; message: string };
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function parseNonnegativeDecimal(value: string) {
-  const trimmed = value.trim();
-  if (trimmed.length > 100) return null;
-  const match = trimmed.match(/^(?:(\d+)(?:\.(\d*))?|\.(\d+))$/);
-  if (!match) return null;
-  const integer = match[1] ?? "0";
-  const fraction = match[2] ?? match[3] ?? "";
-  return {
-    text: trimmed,
-    coefficient: BigInt(`${integer}${fraction}`),
-    scale: fraction.length,
-  };
-}
-
-function isValidDate(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number(value.slice(0, 4)) < 1) return false;
-  const parsedDate = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(parsedDate.valueOf()) && parsedDate.toISOString().slice(0, 10) === value;
-}
-
-function validateGoal(
-  rawName: string,
-  rawTargetAmount: string,
-  rawCurrentAmount: string,
-  rawTargetDate: string,
-) {
-  const name = typeof rawName === "string" ? rawName.trim() : "";
-  const target = typeof rawTargetAmount === "string" ? parseNonnegativeDecimal(rawTargetAmount) : null;
-  const current = typeof rawCurrentAmount === "string" ? parseNonnegativeDecimal(rawCurrentAmount) : null;
-  const targetDate = typeof rawTargetDate === "string" ? rawTargetDate.trim() : "";
-
-  if (!name) return { success: false as const, message: "Enter a savings goal name." };
-  if (!target || target.coefficient <= BigInt(0)) {
-    return { success: false as const, message: "Enter a target amount greater than zero." };
-  }
-  if (!current) return { success: false as const, message: "Enter a valid current saved amount of zero or more." };
-
-  const scale = Math.max(target.scale, current.scale);
-  const targetValue = target.coefficient * BigInt(10) ** BigInt(scale - target.scale);
-  const currentValue = current.coefficient * BigInt(10) ** BigInt(scale - current.scale);
-  if (currentValue > targetValue) {
-    return { success: false as const, message: "Current savings cannot exceed the target amount." };
-  }
-  if (targetDate && !isValidDate(targetDate)) {
-    return { success: false as const, message: "Enter a valid target date." };
-  }
-
-  return {
-    success: true as const,
-    input: {
-      name,
-      targetAmount: target.text,
-      currentAmount: current.text,
-      targetDate: targetDate || null,
-    },
-  };
-}
 
 async function getAuthenticatedUser() {
   const supabase = await createClient();
@@ -80,7 +23,7 @@ export async function createSavingsGoal(
   rawCurrentAmount: string,
   rawTargetDate: string,
 ): Promise<ActionResult> {
-  const validation = validateGoal(rawName, rawTargetAmount, rawCurrentAmount, rawTargetDate);
+  const validation = validateSavingsGoal(rawName, rawTargetAmount, rawCurrentAmount, rawTargetDate);
   if (!validation.success) return validation;
 
   try {
@@ -114,7 +57,7 @@ export async function updateSavingsGoal(
   if (typeof rawGoalId !== "string" || !uuidPattern.test(rawGoalId)) {
     return { success: false, message: "That savings goal could not be found. Refresh and try again." };
   }
-  const validation = validateGoal(rawName, rawTargetAmount, rawCurrentAmount, rawTargetDate);
+  const validation = validateSavingsGoal(rawName, rawTargetAmount, rawCurrentAmount, rawTargetDate);
   if (!validation.success) return validation;
 
   try {

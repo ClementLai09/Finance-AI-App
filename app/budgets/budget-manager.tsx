@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useRef, useState } from "react";
 import { createBudget, deleteBudget, updateBudgetAmount } from "./actions";
+import { formatMoney } from "../../lib/finance/decimal";
 
 export type BudgetCategory = {
   id: string;
@@ -24,15 +25,6 @@ export type BudgetItem = {
 };
 
 type Feedback = { kind: "success" | "error"; message: string };
-
-function formatMoney(value: string) {
-  return new Intl.NumberFormat("en-MY", {
-    style: "currency",
-    currency: "MYR",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number(value));
-}
 
 export function BudgetManager({
   monthLabel,

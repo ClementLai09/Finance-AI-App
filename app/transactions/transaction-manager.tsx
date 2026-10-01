@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { createTransaction, deleteTransaction, updateTransaction } from "./actions";
+import { canSelectCategory } from "../../lib/finance/categories";
+import { formatMoney } from "../../lib/finance/decimal";
+import { parsePositiveAmount } from "../../lib/finance/transactions";
 
 export type Transaction = {
   id: string;
@@ -39,29 +42,7 @@ function getLocalDate() {
 }
 
 function isPositiveAmount(value: string) {
-  const match = value.trim().match(/^(\d+)(?:\.(\d*))?$|^\.(\d+)$/);
-  if (!match) return false;
-  const integer = match[1] ?? "0";
-  const fraction = match[2] ?? match[3] ?? "";
-  const significantInteger = integer.replace(/^0+/, "") || "0";
-  return significantInteger.length <= 131072 && fraction.length <= 16383 && BigInt(`${significantInteger}${fraction}`) > BigInt(0);
-}
-
-function formatAmount(amount: string) {
-  const match = amount.trim().match(/^([+-]?)(\d+)(?:\.(\d*))?$/);
-  if (!match) return "RM0.00";
-  const integer = match[2].replace(/^0+(?=\d)/, "");
-  const fraction = match[3] ?? "";
-  let minorUnits = BigInt(`${integer}${fraction.padEnd(2, "0").slice(0, 2)}`);
-  if (fraction[2] && fraction[2] >= "5") minorUnits += BigInt(1);
-  const whole = minorUnits / BigInt(100);
-  const cents = (minorUnits % BigInt(100)).toString().padStart(2, "0");
-  const formattedWhole = new Intl.NumberFormat("en-MY", {
-    style: "currency",
-    currency: "MYR",
-    maximumFractionDigits: 0,
-  }).format(match[1] === "-" ? -whole : whole);
-  return `${formattedWhole}.${cents}`;
+  return parsePositiveAmount(value) !== null;
 }
 
 function formatDate(date: string) {
@@ -102,7 +83,7 @@ export function TransactionManager({
   }, []);
 
   const activeCategories = categories.filter(
-    (category) => !category.is_archived && category.type === type,
+    (category) => canSelectCategory(category, type),
   );
   const categoriesById = new Map(categories.map((category) => [category.id, category]));
 
@@ -577,7 +558,7 @@ export function TransactionManager({
                             </div>
                             <div className="flex shrink-0 flex-col items-end gap-3">
                               <p className={`text-sm font-semibold ${isIncome ? "text-emerald-800" : "text-slate-900"}`}>
-                                {formatAmount(transaction.amount_text)}
+                                {formatMoney(transaction.amount_text)}
                               </p>
                               <div className="flex gap-2">
                                 <button

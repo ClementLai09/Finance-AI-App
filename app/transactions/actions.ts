@@ -2,68 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "../../lib/supabase/server";
+import { validateTransactionInput, type TransactionType, type ValidTransactionInput } from "../../lib/finance/transactions";
 
-type TransactionType = "income" | "expense";
 type ActionResult = { success: true; message: string } | { success: false; message: string };
-type ValidTransactionInput = {
-  type: TransactionType;
-  amount: string;
-  categoryId: string;
-  date: string;
-  notes: string | null;
-};
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function parsePositiveAmount(rawAmount: string): string | null {
-  if (typeof rawAmount !== "string") return null;
-  const amount = rawAmount.trim();
-  const match = amount.match(/^(\d+)(?:\.(\d*))?$|^\.(\d+)$/);
-  if (!match) return null;
-
-  const integer = match[1] ?? "0";
-  const fraction = match[2] ?? match[3] ?? "";
-  const significantInteger = integer.replace(/^0+/, "") || "0";
-  if (significantInteger.length > 131072 || fraction.length > 16383) return null;
-  if (BigInt(`${significantInteger}${fraction}`) <= BigInt(0)) return null;
-  return fraction ? `${significantInteger}.${fraction}` : significantInteger;
-}
-
-function isValidDate(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number(value.slice(0, 4)) < 1) {
-    return false;
-  }
-
-  const parsedDate = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(parsedDate.valueOf()) && parsedDate.toISOString().slice(0, 10) === value;
-}
-
-function validateTransactionInput(
-  rawType: string,
-  rawAmount: string,
-  rawCategoryId: string,
-  rawDate: string,
-  rawNotes: string,
-): { success: true; input: ValidTransactionInput } | { success: false; message: string } {
-  const type: TransactionType | null = rawType === "income" || rawType === "expense" ? rawType : null;
-  const amount = parsePositiveAmount(rawAmount);
-  const categoryId = typeof rawCategoryId === "string" ? rawCategoryId : "";
-  const date = typeof rawDate === "string" ? rawDate : "";
-  const notes = typeof rawNotes === "string" && rawNotes.trim() ? rawNotes : null;
-
-  if (!type) return { success: false, message: "Choose income or expense." };
-  if (amount === null) {
-    return { success: false, message: "Enter an amount greater than zero." };
-  }
-  if (!uuidPattern.test(categoryId)) {
-    return { success: false, message: "Choose a valid category." };
-  }
-  if (!isValidDate(date)) {
-    return { success: false, message: "Enter a valid transaction date." };
-  }
-
-  return { success: true, input: { type, amount, categoryId, date, notes } };
-}
 
 async function getAuthenticatedUser() {
   const supabase = await createClient();

@@ -1,24 +1,16 @@
 "use server";
 
 import { createClient } from "../../lib/supabase/server";
+import { addDecimals as add, compareDecimals, decimalToString as text, parseDecimal as decimal, subtractDecimals, type Decimal } from "../../lib/finance/decimal";
+import { validateReport, type AnalysisReport } from "../../lib/finance/ai-report";
 
-export type AnalysisReport = {
-  summary: string;
-  spending_observations: string[];
-  category_observations: string[];
-  budget_observations: string[];
-  savings_observations: string[];
-  previous_month_comparison: string[];
-  areas_to_watch: string[];
-  suggestions: string[];
-};
+export type { AnalysisReport } from "../../lib/finance/ai-report";
 
 type ActionResult =
   | { ok: true; empty: true }
   | { ok: true; empty: false; report: AnalysisReport }
   | { ok: false; error: string };
 
-type Decimal = { value: bigint; scale: number };
 type Transaction = { type: "income" | "expense"; amount_text: string; category_id: string };
 const GEMINI_MODEL = "gemini-3.1-flash-lite";
 
@@ -77,54 +69,12 @@ function reportGeminiNetworkError(error: unknown, apiKey: string): ActionResult 
   return { ok: false, error: "We couldn't connect to the AI service. Please check your connection and try again." };
 }
 
-function decimal(value: string): Decimal {
-  const match = value.trim().match(/^([+-]?)(\d+)(?:\.(\d+))?$/);
-  if (!match) throw new Error("Invalid numeric value returned by the database.");
-  return {
-    value: BigInt(`${match[2]}${match[3] ?? ""}`) * (match[1] === "-" ? -BigInt(1) : BigInt(1)),
-    scale: (match[3] ?? "").length,
-  };
-}
-
-function add(left: Decimal, rightValue: string): Decimal {
-  const right = decimal(rightValue);
-  const scale = Math.max(left.scale, right.scale);
-  return {
-    value: left.value * BigInt(10) ** BigInt(scale - left.scale) + right.value * BigInt(10) ** BigInt(scale - right.scale),
-    scale,
-  };
-}
-
-function text(value: Decimal): string {
-  const negative = value.value < BigInt(0);
-  const digits = (negative ? -value.value : value.value).toString().padStart(value.scale + 1, "0");
-  if (!value.scale) return `${negative ? "-" : ""}${digits}`;
-  const integer = digits.slice(0, -value.scale);
-  const fraction = digits.slice(-value.scale).replace(/0+$/, "");
-  return `${negative ? "-" : ""}${integer}${fraction ? `.${fraction}` : ""}`;
-}
-
 function subtract(leftText: string, rightText: string): string {
-  const left = decimal(leftText);
-  const right = decimal(rightText);
-  const scale = Math.max(left.scale, right.scale);
-  return text({
-    value: left.value * BigInt(10) ** BigInt(scale - left.scale) - right.value * BigInt(10) ** BigInt(scale - right.scale),
-    scale,
-  });
+  return text(subtractDecimals(leftText, rightText));
 }
 
 function isNegative(value: string): boolean {
-  return decimal(value).value < BigInt(0);
-}
-
-function compareDecimal(leftText: string, rightText: string): number {
-  const left = decimal(leftText);
-  const right = decimal(rightText);
-  const scale = Math.max(left.scale, right.scale);
-  const leftValue = left.value * BigInt(10) ** BigInt(scale - left.scale);
-  const rightValue = right.value * BigInt(10) ** BigInt(scale - right.scale);
-  return leftValue < rightValue ? -1 : leftValue > rightValue ? 1 : 0;
+  return decimal(value).coefficient < BigInt(0);
 }
 
 function currentMonthInKualaLumpur(): string {
@@ -174,32 +124,6 @@ async function loadTransactions(
   }
 }
 
-function validateReport(value: unknown): AnalysisReport | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const record = value as Record<string, unknown>;
-  const keys: (keyof AnalysisReport)[] = [
-    "summary", "spending_observations", "category_observations", "budget_observations",
-    "savings_observations", "previous_month_comparison", "areas_to_watch", "suggestions",
-  ];
-  if (typeof record.summary !== "string" || !record.summary.trim() || record.summary.length > 1200) return null;
-  const result: AnalysisReport = {
-    summary: record.summary.trim(),
-    spending_observations: [],
-    category_observations: [],
-    budget_observations: [],
-    savings_observations: [],
-    previous_month_comparison: [],
-    areas_to_watch: [],
-    suggestions: [],
-  };
-  for (const key of keys.slice(1)) {
-    const items = record[key];
-    if (!Array.isArray(items) || items.length > 6 || items.some((item) => typeof item !== "string" || !item.trim() || item.length > 600)) return null;
-    Object.assign(result, { [key]: items.map((item) => (item as string).trim()) });
-  }
-  return result;
-}
-
 function extractText(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") return null;
   const candidates = (payload as { candidates?: unknown }).candidates;
@@ -237,25 +161,25 @@ export async function analyzeMonth(rawMonth: string): Promise<ActionResult> {
     const sums = (rows: Transaction[]) => rows.reduce((total, row) => ({
       income: row.type === "income" ? add(total.income, row.amount_text) : total.income,
       expenses: row.type === "expense" ? add(total.expenses, row.amount_text) : total.expenses,
-    }), { income: { value: BigInt(0), scale: 0 }, expenses: { value: BigInt(0), scale: 0 } });
+    }), { income: { coefficient: BigInt(0), scale: 0 }, expenses: { coefficient: BigInt(0), scale: 0 } });
     const currentSums = sums(transactions);
     const previousSums = sums(previousTransactions);
     const expenseByCategory = new Map<string, Decimal>();
     for (const row of transactions) {
-      if (row.type === "expense") expenseByCategory.set(row.category_id, add(expenseByCategory.get(row.category_id) ?? { value: BigInt(0), scale: 0 }, row.amount_text));
+      if (row.type === "expense") expenseByCategory.set(row.category_id, add(expenseByCategory.get(row.category_id) ?? { coefficient: BigInt(0), scale: 0 }, row.amount_text));
     }
 
     const budgets = (budgetResult.data ?? []).map((budget) => {
       const category = categoryMap.get(budget.category_id);
       const amount = budget.amount_text as string;
-      const spent = text(expenseByCategory.get(budget.category_id) ?? { value: BigInt(0), scale: 0 });
+      const spent = text(expenseByCategory.get(budget.category_id) ?? { coefficient: BigInt(0), scale: 0 });
       const remaining = subtract(amount, spent);
       return { category: category?.name ?? "Archived category", budget: amount, spent, remaining, overspent: isNegative(remaining) ? subtract(spent, amount) : null };
     });
     const categories = [...expenseByCategory.entries()].map(([categoryId, amount]) => ({
       category: categoryMap.get(categoryId)?.name ?? "Archived category",
       spent: text(amount),
-    })).sort((a, b) => compareDecimal(b.spent, a.spent));
+    })).sort((a, b) => compareDecimals(b.spent, a.spent));
     const goals = (goalResult.data ?? []).map((goal) => ({
       name: goal.name,
       target: goal.target_text,

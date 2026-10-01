@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "../lib/supabase/server";
+import { calculateBudgetProgress } from "../lib/finance/budgets";
+import { formatMoney, percentageOf, compareDecimals } from "../lib/finance/decimal";
+import { getMonthRange } from "../lib/finance/dates";
+import { calculateMonthlyTotals } from "../lib/finance/transactions";
 
-type DecimalTotal = { coefficient: bigint; scale: number };
 type FinanceType = "income" | "expense";
 type DashboardTransaction = {
   id: string;
@@ -14,119 +17,11 @@ type DashboardTransaction = {
   created_at: string;
 };
 
-function decimalParts(value: number | string): DecimalTotal {
-  const match = String(value).trim().match(/^([+-]?)(\d+)(?:\.(\d*))?(?:e([+-]?\d+))?$/i);
-  if (!match) throw new Error("Invalid numeric amount returned by the database.");
-
-  const sign = match[1] === "-" ? -BigInt(1) : BigInt(1);
-  const fraction = match[3] ?? "";
-  let coefficient = BigInt(`${match[2]}${fraction}`) * sign;
-  let scale = fraction.length - Number(match[4] ?? 0);
-  if (scale < 0) {
-    coefficient *= BigInt(10) ** BigInt(-scale);
-    scale = 0;
-  }
-  return { coefficient, scale };
-}
-
-function addDecimal(total: DecimalTotal, value: number | string): DecimalTotal {
-  const next = decimalParts(value);
-  const scale = Math.max(total.scale, next.scale);
-  return {
-    coefficient:
-      total.coefficient * BigInt(10) ** BigInt(scale - total.scale) +
-      next.coefficient * BigInt(10) ** BigInt(scale - next.scale),
-    scale,
-  };
-}
-
-function decimalString(value: DecimalTotal): string {
-  const negative = value.coefficient < BigInt(0);
-  const digits = (negative ? -value.coefficient : value.coefficient)
-    .toString()
-    .padStart(value.scale + 1, "0");
-  if (!value.scale) return `${negative ? "-" : ""}${digits}`;
-  const integer = digits.slice(0, -value.scale);
-  const fraction = digits.slice(-value.scale).replace(/0+$/, "");
-  return `${negative ? "-" : ""}${integer}${fraction ? `.${fraction}` : ""}`;
-}
-
-function compareDecimalDescending(left: string, right: string) {
-  const a = decimalParts(left);
-  const b = decimalParts(right);
-  const scale = Math.max(a.scale, b.scale);
-  const leftValue = a.coefficient * BigInt(10) ** BigInt(scale - a.scale);
-  const rightValue = b.coefficient * BigInt(10) ** BigInt(scale - b.scale);
-  return leftValue > rightValue ? -1 : leftValue < rightValue ? 1 : 0;
-}
-
-function percentageOf(value: string, maximum: string) {
-  const part = decimalParts(value);
-  const whole = decimalParts(maximum);
-  const scale = Math.max(part.scale, whole.scale);
-  const numerator = part.coefficient * BigInt(10) ** BigInt(scale - part.scale);
-  const denominator = whole.coefficient * BigInt(10) ** BigInt(scale - whole.scale);
-  if (denominator <= BigInt(0)) return 0;
-  return Number((numerator * BigInt(10000)) / denominator) / 100;
-}
-
-function formatMoney(value: string) {
-  const match = value.trim().match(/^([+-]?)(\d+)(?:\.(\d*))?$/);
-  if (!match) return "RM0.00";
-  const integer = match[2].replace(/^0+(?=\d)/, "");
-  const fraction = match[3] ?? "";
-  let minorUnits = BigInt(`${integer}${fraction.padEnd(2, "0").slice(0, 2)}`);
-  if (fraction[2] && fraction[2] >= "5") minorUnits += BigInt(1);
-  const whole = minorUnits / BigInt(100);
-  const cents = (minorUnits % BigInt(100)).toString().padStart(2, "0");
-  const formattedWhole = new Intl.NumberFormat("en-MY", {
-    style: "currency",
-    currency: "MYR",
-    maximumFractionDigits: 0,
-  }).format(whole);
-  return `${match[1] === "-" ? "-" : ""}${formattedWhole}.${cents}`;
-}
-
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-MY", {
     dateStyle: "medium",
     timeZone: "UTC",
   }).format(new Date(`${value}T00:00:00Z`));
-}
-
-function currentMonthKey() {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kuala_Lumpur",
-    year: "numeric",
-    month: "2-digit",
-  }).formatToParts(new Date());
-  return `${parts.find((part) => part.type === "year")?.value}-${parts.find((part) => part.type === "month")?.value}`;
-}
-
-function monthRange(requestedMonth: string | undefined) {
-  const currentMonth = currentMonthKey();
-  const selectedMonth = requestedMonth && /^\d{4}-(0[1-9]|1[0-2])$/.test(requestedMonth) && requestedMonth <= currentMonth
-    ? requestedMonth
-    : currentMonth;
-  const [yearText, monthText] = selectedMonth.split("-");
-  const year = Number(yearText);
-  const month = Number(monthText);
-  const firstDay = `${selectedMonth}-01`;
-  const nextMonthStart = month === 12
-    ? `${String(year + 1).padStart(4, "0")}-01-01`
-    : `${yearText}-${String(month + 1).padStart(2, "0")}-01`;
-
-  return {
-    month: selectedMonth,
-    currentMonth,
-    firstDay,
-    nextMonthStart,
-    label: new Intl.DateTimeFormat("en-MY", {
-      month: "long",
-      year: "numeric",
-      timeZone: "UTC",
-    }).format(new Date(`${firstDay}T00:00:00Z`)),
-  };
 }
 
 async function loadMonthlyTransactions(
@@ -171,7 +66,7 @@ export async function DashboardContent({
 
   if (!user) redirect("/login");
 
-  const { month, currentMonth, firstDay, nextMonthStart, label: monthLabel } = monthRange(requestedMonth);
+  const { month, currentMonth, firstDay, nextMonthStart, label: monthLabel } = getMonthRange(requestedMonth);
   const [monthlyResult, recentResult, categoriesResult, budgetsResult] = await Promise.all([
     loadMonthlyTransactions(supabase, user.id, firstDay, nextMonthStart),
     supabase
@@ -214,49 +109,33 @@ export async function DashboardContent({
   );
   const categoryRows = new Map((categoriesResult.data ?? []).map((category) => [category.id, category]));
 
-  const totals: Record<FinanceType, DecimalTotal> = {
-    income: { coefficient: BigInt(0), scale: 0 },
-    expense: { coefficient: BigInt(0), scale: 0 },
-  };
-  const expenseByCategory = new Map<string, DecimalTotal>();
-
-  for (const transaction of monthlyTransactions) {
-    totals[transaction.type] = addDecimal(totals[transaction.type], transaction.amount_text);
-    if (transaction.type === "expense") {
-      expenseByCategory.set(
-        transaction.category_id,
-        addDecimal(
-          expenseByCategory.get(transaction.category_id) ?? { coefficient: BigInt(0), scale: 0 },
-          transaction.amount_text,
-        ),
-      );
-    }
-  }
-
-  const remaining = addDecimal(
-    totals.income,
-    `${totals.expense.coefficient === BigInt(0) ? "" : "-"}${decimalString(totals.expense)}`,
-  );
+  const totals = calculateMonthlyTotals(monthlyTransactions.map((transaction) => ({
+    type: transaction.type,
+    amount: transaction.amount_text,
+    date: transaction.date,
+    categoryId: transaction.category_id,
+  })), month);
+  const expenseByCategory = totals.expenseByCategory;
   const categorySpending = [...expenseByCategory.entries()]
     .map(([categoryId, amount]) => ({
       categoryId,
       name: categoryNames.get(categoryId) ?? "Category unavailable",
-      amount: decimalString(amount),
+      amount,
     }))
-    .sort((left, right) => compareDecimalDescending(left.amount, right.amount));
+    .sort((left, right) => compareDecimals(right.amount, left.amount));
   const largestCategoryAmount = categorySpending[0]?.amount ?? "0";
   const categoryBudgets = ((budgetsResult.data ?? []) as { id: string; category_id: string; amount_text: string }[])
     .map((budget) => {
-      const spent = decimalString(expenseByCategory.get(budget.category_id) ?? { coefficient: BigInt(0), scale: 0 });
-      const remaining = subtractDecimal(budget.amount_text, spent);
+      const spent = expenseByCategory.get(budget.category_id) ?? "0";
+      const progress = calculateBudgetProgress(budget.amount_text, spent);
       return {
         id: budget.id,
         name: categoryNames.get(budget.category_id) ?? "Category unavailable",
         archived: categoryRows.get(budget.category_id)?.is_archived ?? false,
         budget: budget.amount_text,
         spent,
-        remaining,
-        overspent: remaining.startsWith("-") ? remaining.slice(1) : null,
+        remaining: progress.remainingAmount,
+        overspent: progress.overspentAmount,
       };
     });
 
@@ -265,9 +144,9 @@ export async function DashboardContent({
       <DashboardHeading month={month} currentMonth={currentMonth} monthLabel={monthLabel} />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <SummaryCard label="Monthly income" amount={decimalString(totals.income)} />
-        <SummaryCard label="Monthly expenses" amount={decimalString(totals.expense)} />
-        <SummaryCard label="Remaining money" amount={decimalString(remaining)} />
+        <SummaryCard label="Monthly income" amount={totals.income} />
+        <SummaryCard label="Monthly expenses" amount={totals.expenses} />
+        <SummaryCard label="Remaining money" amount={totals.remaining} />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
@@ -386,14 +265,6 @@ function DashboardHeading({ month, currentMonth, monthLabel }: { month: string; 
       </form>
     </div>
   );
-}
-
-function subtractDecimal(left: string, right: string): string {
-  const a = decimalParts(left);
-  const b = decimalParts(right);
-  const scale = Math.max(a.scale, b.scale);
-  const coefficient = a.coefficient * BigInt(10) ** BigInt(scale - a.scale) - b.coefficient * BigInt(10) ** BigInt(scale - b.scale);
-  return decimalString({ coefficient, scale });
 }
 
 function SummaryCard({ label, amount }: { label: string; amount: string }) {

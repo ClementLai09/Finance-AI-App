@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "../../lib/supabase/server";
+import { validateCategoryInput } from "../../lib/finance/categories";
 
 type ActionResult = { success: true; message: string } | { success: false; message: string };
 
@@ -22,15 +23,9 @@ async function getAuthenticatedUser() {
 }
 
 export async function createCategory(rawName: string, rawType: string): Promise<ActionResult> {
-  const name = typeof rawName === "string" ? rawName.trim() : "";
-  const type = rawType === "income" || rawType === "expense" ? rawType : null;
-
-  if (!name) {
-    return { success: false, message: "Enter a category name." };
-  }
-  if (!type) {
-    return { success: false, message: "Choose income or expense." };
-  }
+  const validation = validateCategoryInput(rawName, rawType);
+  if (!validation.success) return validation;
+  const { name, type } = validation.input;
 
   try {
     const { supabase, user } = await getAuthenticatedUser();

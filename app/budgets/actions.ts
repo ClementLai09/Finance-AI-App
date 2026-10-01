@@ -2,26 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "../../lib/supabase/server";
+import { isPositiveBudgetAmount } from "../../lib/finance/budgets";
+import { monthStartForDate } from "../../lib/finance/dates";
 
 type ActionResult = { success: true; message: string } | { success: false; message: string };
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-function isPositiveAmount(rawAmount: string) {
-  const amount = typeof rawAmount === "string" ? rawAmount.trim() : "";
-  if (amount.length > 100 || !/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(amount)) return false;
-  return BigInt(amount.replace(".", "")) > BigInt(0);
-}
-
 function currentMonthStart() {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kuala_Lumpur",
-    year: "numeric",
-    month: "2-digit",
-  }).formatToParts(new Date());
-  const year = parts.find((part) => part.type === "year")?.value;
-  const month = parts.find((part) => part.type === "month")?.value;
-  return `${year}-${month}-01`;
+  return monthStartForDate();
 }
 
 async function getAuthenticatedUser() {
@@ -37,7 +26,7 @@ export async function createBudget(rawCategoryId: string, rawAmount: string): Pr
   if (typeof rawCategoryId !== "string" || !uuidPattern.test(rawCategoryId)) {
     return { success: false, message: "Choose a valid expense category." };
   }
-  if (typeof rawAmount !== "string" || !isPositiveAmount(rawAmount)) {
+  if (typeof rawAmount !== "string" || !isPositiveBudgetAmount(rawAmount)) {
     return { success: false, message: "Enter a valid budget amount greater than zero." };
   }
 
@@ -84,7 +73,7 @@ export async function updateBudgetAmount(rawBudgetId: string, rawAmount: string)
   if (typeof rawBudgetId !== "string" || !uuidPattern.test(rawBudgetId)) {
     return { success: false, message: "That budget could not be found. Refresh and try again." };
   }
-  if (typeof rawAmount !== "string" || !isPositiveAmount(rawAmount)) {
+  if (typeof rawAmount !== "string" || !isPositiveBudgetAmount(rawAmount)) {
     return { success: false, message: "Enter a valid budget amount greater than zero." };
   }
 

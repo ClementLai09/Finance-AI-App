@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useRef, useState } from "react";
 import { createSavingsGoal, deleteSavingsGoal, updateSavingsGoal } from "./actions";
+import { formatMoney } from "../../lib/finance/decimal";
 
 export type SavingsGoal = {
   id: string;
@@ -20,15 +21,6 @@ type GoalDraft = {
   currentAmount: string;
   targetDate: string;
 };
-
-function formatMoney(value: string) {
-  return new Intl.NumberFormat("en-MY", {
-    style: "currency",
-    currency: "MYR",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number(value));
-}
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-MY", {

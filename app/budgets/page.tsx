@@ -1,74 +1,15 @@
 import { redirect } from "next/navigation";
 import { createClient } from "../../lib/supabase/server";
 import { BudgetManager, type BudgetItem, type BudgetCategory } from "./budget-manager";
+import { addDecimals, decimalToString, type Decimal } from "../../lib/finance/decimal";
+import { calculateBudgetProgress } from "../../lib/finance/budgets";
+import { getMonthRange } from "../../lib/finance/dates";
 
 type ExpenseTransaction = { category_id: string; amount_text: string };
 
-type DecimalTotal = { coefficient: bigint; scale: number };
-
-function decimalParts(value: string): DecimalTotal {
-  const match = value.trim().match(/^([+-]?)(\d+)(?:\.(\d*))?$/);
-  if (!match) throw new Error("Invalid numeric amount returned by the database.");
-  const coefficient = BigInt(`${match[2]}${match[3] ?? ""}`) * (match[1] === "-" ? -BigInt(1) : BigInt(1));
-  return { coefficient, scale: (match[3] ?? "").length };
-}
-
-function addDecimal(total: DecimalTotal, value: string): DecimalTotal {
-  const next = decimalParts(value);
-  const scale = Math.max(total.scale, next.scale);
-  return {
-    coefficient:
-      total.coefficient * BigInt(10) ** BigInt(scale - total.scale) +
-      next.coefficient * BigInt(10) ** BigInt(scale - next.scale),
-    scale,
-  };
-}
-
-function decimalString(value: DecimalTotal): string {
-  const negative = value.coefficient < BigInt(0);
-  const digits = (negative ? -value.coefficient : value.coefficient)
-    .toString()
-    .padStart(value.scale + 1, "0");
-  if (!value.scale) return `${negative ? "-" : ""}${digits}`;
-  const integer = digits.slice(0, -value.scale);
-  const fraction = digits.slice(-value.scale).replace(/0+$/, "");
-  return `${negative ? "-" : ""}${integer}${fraction ? `.${fraction}` : ""}`;
-}
-
-function subtractDecimal(left: string, right: string): string {
-  const a = decimalParts(left);
-  const b = decimalParts(right);
-  const scale = Math.max(a.scale, b.scale);
-  const coefficient =
-    a.coefficient * BigInt(10) ** BigInt(scale - a.scale) -
-    b.coefficient * BigInt(10) ** BigInt(scale - b.scale);
-  const negative = coefficient < BigInt(0);
-  const digits = (negative ? -coefficient : coefficient).toString().padStart(scale + 1, "0");
-  if (!scale) return `${negative ? "-" : ""}${digits}`;
-  const integer = digits.slice(0, -scale);
-  const fraction = digits.slice(-scale).replace(/0+$/, "");
-  return `${negative ? "-" : ""}${integer}${fraction ? `.${fraction}` : ""}`;
-}
-
 function currentMonth() {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kuala_Lumpur",
-    year: "numeric",
-    month: "2-digit",
-  }).formatToParts(new Date());
-  const year = Number(parts.find((part) => part.type === "year")?.value);
-  const month = Number(parts.find((part) => part.type === "month")?.value);
-  const start = `${year}-${String(month).padStart(2, "0")}-01`;
-  const next = new Date(Date.UTC(year, month, 1));
-  return {
-    start,
-    nextStart: `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}-01`,
-    label: new Intl.DateTimeFormat("en-MY", {
-      month: "long",
-      year: "numeric",
-      timeZone: "UTC",
-    }).format(new Date(`${start}T00:00:00Z`)),
-  };
+  const range = getMonthRange();
+  return { start: range.firstDay, nextStart: range.nextMonthStart, label: range.label };
 }
 
 async function loadMonthlyExpenses(
@@ -127,12 +68,12 @@ export default async function BudgetsPage() {
   const loadError = budgetsResult.error || categoriesResult.error || expenseResult.error;
   const categories = (categoriesResult.data ?? []) as BudgetCategory[];
   const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
-  const spentByCategory = new Map<string, DecimalTotal>();
+  const spentByCategory = new Map<string, Decimal>();
 
   for (const expense of expenseResult.expenses) {
     spentByCategory.set(
       expense.category_id,
-      addDecimal(
+      addDecimals(
         spentByCategory.get(expense.category_id) ?? { coefficient: BigInt(0), scale: 0 },
         expense.amount_text,
       ),
@@ -146,8 +87,8 @@ export default async function BudgetsPage() {
     month: string;
   }[]).map((budget) => {
     const spent = spentByCategory.get(budget.category_id) ?? { coefficient: BigInt(0), scale: 0 };
-    const spentString = decimalString(spent);
-    const remaining = subtractDecimal(budget.amount_text, spentString);
+    const spentString = decimalToString(spent);
+    const progress = calculateBudgetProgress(budget.amount_text, spentString);
     return {
       id: budget.id,
       categoryId: budget.category_id,
@@ -155,8 +96,7 @@ export default async function BudgetsPage() {
       isCategoryArchived: categories.find((category) => category.id === budget.category_id)?.is_archived ?? false,
       budgetAmount: budget.amount_text,
       spentAmount: spentString,
-      remainingAmount: remaining,
-      overspentAmount: remaining.startsWith("-") ? remaining.slice(1) : null,
+      ...progress,
     };
   });
 
