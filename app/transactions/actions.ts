@@ -7,13 +7,27 @@ type TransactionType = "income" | "expense";
 type ActionResult = { success: true; message: string } | { success: false; message: string };
 type ValidTransactionInput = {
   type: TransactionType;
-  amount: number;
+  amount: string;
   categoryId: string;
   date: string;
   notes: string | null;
 };
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function parsePositiveAmount(rawAmount: string): string | null {
+  if (typeof rawAmount !== "string") return null;
+  const amount = rawAmount.trim();
+  const match = amount.match(/^(\d+)(?:\.(\d*))?$|^\.(\d+)$/);
+  if (!match) return null;
+
+  const integer = match[1] ?? "0";
+  const fraction = match[2] ?? match[3] ?? "";
+  const significantInteger = integer.replace(/^0+/, "") || "0";
+  if (significantInteger.length > 131072 || fraction.length > 16383) return null;
+  if (BigInt(`${significantInteger}${fraction}`) <= BigInt(0)) return null;
+  return fraction ? `${significantInteger}.${fraction}` : significantInteger;
+}
 
 function isValidDate(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number(value.slice(0, 4)) < 1) {
@@ -32,13 +46,13 @@ function validateTransactionInput(
   rawNotes: string,
 ): { success: true; input: ValidTransactionInput } | { success: false; message: string } {
   const type: TransactionType | null = rawType === "income" || rawType === "expense" ? rawType : null;
-  const amount = typeof rawAmount === "string" && rawAmount.trim() ? Number(rawAmount) : Number.NaN;
+  const amount = parsePositiveAmount(rawAmount);
   const categoryId = typeof rawCategoryId === "string" ? rawCategoryId : "";
   const date = typeof rawDate === "string" ? rawDate : "";
   const notes = typeof rawNotes === "string" && rawNotes.trim() ? rawNotes : null;
 
   if (!type) return { success: false, message: "Choose income or expense." };
-  if (!Number.isFinite(amount) || amount <= 0) {
+  if (amount === null) {
     return { success: false, message: "Enter an amount greater than zero." };
   }
   if (!uuidPattern.test(categoryId)) {

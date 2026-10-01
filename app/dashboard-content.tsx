@@ -71,12 +71,20 @@ function percentageOf(value: string, maximum: string) {
 }
 
 function formatMoney(value: string) {
-  return new Intl.NumberFormat("en-MY", {
+  const match = value.trim().match(/^([+-]?)(\d+)(?:\.(\d*))?$/);
+  if (!match) return "RM0.00";
+  const integer = match[2].replace(/^0+(?=\d)/, "");
+  const fraction = match[3] ?? "";
+  let minorUnits = BigInt(`${integer}${fraction.padEnd(2, "0").slice(0, 2)}`);
+  if (fraction[2] && fraction[2] >= "5") minorUnits += BigInt(1);
+  const whole = minorUnits / BigInt(100);
+  const cents = (minorUnits % BigInt(100)).toString().padStart(2, "0");
+  const formattedWhole = new Intl.NumberFormat("en-MY", {
     style: "currency",
     currency: "MYR",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number(value));
+    maximumFractionDigits: 0,
+  }).format(whole);
+  return `${match[1] === "-" ? "-" : ""}${formattedWhole}.${cents}`;
 }
 
 function formatDate(value: string) {
@@ -86,21 +94,31 @@ function formatDate(value: string) {
   }).format(new Date(`${value}T00:00:00Z`));
 }
 
-function currentMonthRange() {
+function currentMonthKey() {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Kuala_Lumpur",
     year: "numeric",
     month: "2-digit",
   }).formatToParts(new Date());
-  const year = Number(parts.find((part) => part.type === "year")?.value);
-  const month = Number(parts.find((part) => part.type === "month")?.value);
-  const firstDay = `${year}-${String(month).padStart(2, "0")}-01`;
-  const nextMonth = new Date(Date.UTC(year, month, 1));
-  const nextMonthStart = `${nextMonth.getUTCFullYear()}-${String(
-    nextMonth.getUTCMonth() + 1,
-  ).padStart(2, "0")}-01`;
+  return `${parts.find((part) => part.type === "year")?.value}-${parts.find((part) => part.type === "month")?.value}`;
+}
+
+function monthRange(requestedMonth: string | undefined) {
+  const currentMonth = currentMonthKey();
+  const selectedMonth = requestedMonth && /^\d{4}-(0[1-9]|1[0-2])$/.test(requestedMonth) && requestedMonth <= currentMonth
+    ? requestedMonth
+    : currentMonth;
+  const [yearText, monthText] = selectedMonth.split("-");
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const firstDay = `${selectedMonth}-01`;
+  const nextMonthStart = month === 12
+    ? `${String(year + 1).padStart(4, "0")}-01-01`
+    : `${yearText}-${String(month + 1).padStart(2, "0")}-01`;
 
   return {
+    month: selectedMonth,
+    currentMonth,
     firstDay,
     nextMonthStart,
     label: new Intl.DateTimeFormat("en-MY", {
@@ -139,7 +157,13 @@ async function loadMonthlyTransactions(
   }
 }
 
-export async function DashboardContent() {
+export async function DashboardContent({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const requestedMonth = Array.isArray(params.month) ? params.month[0] : params.month;
   const supabase = await createClient();
   const {
     data: { user },
@@ -147,27 +171,35 @@ export async function DashboardContent() {
 
   if (!user) redirect("/login");
 
-  const { firstDay, nextMonthStart, label: monthLabel } = currentMonthRange();
-  const [monthlyResult, recentResult, categoriesResult] = await Promise.all([
+  const { month, currentMonth, firstDay, nextMonthStart, label: monthLabel } = monthRange(requestedMonth);
+  const [monthlyResult, recentResult, categoriesResult, budgetsResult] = await Promise.all([
     loadMonthlyTransactions(supabase, user.id, firstDay, nextMonthStart),
     supabase
       .from("transactions")
       .select("id, type, amount_text:amount::text, category_id, date, notes, created_at")
       .eq("user_id", user.id)
+      .gte("date", firstDay)
+      .lt("date", nextMonthStart)
       .order("date", { ascending: false })
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
       .limit(5),
-    supabase.from("categories").select("id, name").eq("user_id", user.id),
+    supabase.from("categories").select("id, name, is_archived").eq("user_id", user.id),
+    supabase
+      .from("budgets")
+      .select("id, category_id, amount_text:amount::text")
+      .eq("user_id", user.id)
+      .eq("month", firstDay)
+      .order("created_at", { ascending: true }),
   ]);
 
-  if (monthlyResult.error || recentResult.error || categoriesResult.error) {
+  if (monthlyResult.error || recentResult.error || categoriesResult.error || budgetsResult.error) {
     return (
       <section aria-labelledby="dashboard-title">
-        <DashboardHeading monthLabel={monthLabel} />
+        <DashboardHeading month={month} currentMonth={currentMonth} monthLabel={monthLabel} />
         <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">
           We couldn’t load your dashboard data. Please try again.
-          <Link href="/" className="ml-2 font-semibold underline underline-offset-2">
+          <Link href={`/?month=${month}`} className="ml-2 font-semibold underline underline-offset-2">
             Retry
           </Link>
         </div>
@@ -180,6 +212,7 @@ export async function DashboardContent() {
   const categoryNames = new Map(
     (categoriesResult.data ?? []).map((category) => [category.id, category.name]),
   );
+  const categoryRows = new Map((categoriesResult.data ?? []).map((category) => [category.id, category]));
 
   const totals: Record<FinanceType, DecimalTotal> = {
     income: { coefficient: BigInt(0), scale: 0 },
@@ -212,10 +245,24 @@ export async function DashboardContent() {
     }))
     .sort((left, right) => compareDecimalDescending(left.amount, right.amount));
   const largestCategoryAmount = categorySpending[0]?.amount ?? "0";
+  const categoryBudgets = ((budgetsResult.data ?? []) as { id: string; category_id: string; amount_text: string }[])
+    .map((budget) => {
+      const spent = decimalString(expenseByCategory.get(budget.category_id) ?? { coefficient: BigInt(0), scale: 0 });
+      const remaining = subtractDecimal(budget.amount_text, spent);
+      return {
+        id: budget.id,
+        name: categoryNames.get(budget.category_id) ?? "Category unavailable",
+        archived: categoryRows.get(budget.category_id)?.is_archived ?? false,
+        budget: budget.amount_text,
+        spent,
+        remaining,
+        overspent: remaining.startsWith("-") ? remaining.slice(1) : null,
+      };
+    });
 
   return (
     <section aria-labelledby="dashboard-title">
-      <DashboardHeading monthLabel={monthLabel} />
+      <DashboardHeading month={month} currentMonth={currentMonth} monthLabel={monthLabel} />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <SummaryCard label="Monthly income" amount={decimalString(totals.income)} />
@@ -289,19 +336,64 @@ export async function DashboardContent() {
           )}
         </section>
       </div>
+
+      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5" aria-labelledby="dashboard-budgets-heading">
+        <h2 id="dashboard-budgets-heading" className="text-lg font-semibold text-slate-950">Category budget progress</h2>
+        <p className="mt-1 text-sm text-slate-500">Budgets for {monthLabel}</p>
+        {categoryBudgets.length === 0 ? (
+          <p className="mt-5 text-sm text-slate-500">No category budgets for this month.</p>
+        ) : (
+          <ul className="mt-5 space-y-5">
+            {categoryBudgets.map((budget) => {
+              const progress = Math.min(percentageOf(budget.spent, budget.budget), 100);
+              return (
+                <li key={budget.id}>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium text-slate-900">{budget.name}{budget.archived ? " (Archived)" : ""}</p>
+                      <p className="mt-1 text-sm text-slate-600">{formatMoney(budget.spent)} spent of {formatMoney(budget.budget)}</p>
+                    </div>
+                    <p className={`text-sm font-semibold ${budget.overspent ? "text-red-700" : "text-slate-700"}`}>
+                      {budget.overspent ? `Over by ${formatMoney(budget.overspent)}` : `${formatMoney(budget.remaining)} remaining`}
+                    </p>
+                  </div>
+                  <div className="mt-2 h-2 rounded-full bg-slate-100" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(progress, 100)} aria-label={`${budget.name} budget progress`}>
+                    <div className={`h-2 rounded-full ${budget.overspent ? "bg-red-600" : "bg-emerald-600"}`} style={{ width: `${progress}%` }} />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
     </section>
   );
 }
 
-function DashboardHeading({ monthLabel }: { monthLabel: string }) {
+function DashboardHeading({ month, currentMonth, monthLabel }: { month: string; currentMonth: string; monthLabel: string }) {
   return (
-    <div className="mb-6">
-      <h1 id="dashboard-title" className="text-3xl font-semibold tracking-tight text-slate-950">
-        Dashboard
-      </h1>
-      <p className="mt-2 text-sm text-slate-600">Your financial overview for {monthLabel}.</p>
+    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <h1 id="dashboard-title" className="text-3xl font-semibold tracking-tight text-slate-950">Dashboard</h1>
+        <p className="mt-2 text-sm text-slate-600">Your financial overview for {monthLabel}.</p>
+      </div>
+      <form action="/" method="get" className="flex items-end gap-2">
+        <label htmlFor="dashboard-month" className="grid gap-1 text-sm font-medium text-slate-700">
+          Month
+          <input id="dashboard-month" name="month" type="month" defaultValue={month} max={currentMonth} required className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" />
+        </label>
+        <button type="submit" className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800">View</button>
+      </form>
     </div>
   );
+}
+
+function subtractDecimal(left: string, right: string): string {
+  const a = decimalParts(left);
+  const b = decimalParts(right);
+  const scale = Math.max(a.scale, b.scale);
+  const coefficient = a.coefficient * BigInt(10) ** BigInt(scale - a.scale) - b.coefficient * BigInt(10) ** BigInt(scale - b.scale);
+  return decimalString({ coefficient, scale });
 }
 
 function SummaryCard({ label, amount }: { label: string; amount: string }) {

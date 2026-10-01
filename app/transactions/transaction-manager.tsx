@@ -8,7 +8,7 @@ import { createTransaction, deleteTransaction, updateTransaction } from "./actio
 export type Transaction = {
   id: string;
   type: "income" | "expense";
-  amount: number | string;
+  amount_text: string;
   category_id: string;
   date: string;
   notes: string | null;
@@ -38,11 +38,30 @@ function getLocalDate() {
   return `${year}-${month}-${day}`;
 }
 
-function formatAmount(amount: number | string) {
-  return new Intl.NumberFormat("en-MY", {
+function isPositiveAmount(value: string) {
+  const match = value.trim().match(/^(\d+)(?:\.(\d*))?$|^\.(\d+)$/);
+  if (!match) return false;
+  const integer = match[1] ?? "0";
+  const fraction = match[2] ?? match[3] ?? "";
+  const significantInteger = integer.replace(/^0+/, "") || "0";
+  return significantInteger.length <= 131072 && fraction.length <= 16383 && BigInt(`${significantInteger}${fraction}`) > BigInt(0);
+}
+
+function formatAmount(amount: string) {
+  const match = amount.trim().match(/^([+-]?)(\d+)(?:\.(\d*))?$/);
+  if (!match) return "RM0.00";
+  const integer = match[2].replace(/^0+(?=\d)/, "");
+  const fraction = match[3] ?? "";
+  let minorUnits = BigInt(`${integer}${fraction.padEnd(2, "0").slice(0, 2)}`);
+  if (fraction[2] && fraction[2] >= "5") minorUnits += BigInt(1);
+  const whole = minorUnits / BigInt(100);
+  const cents = (minorUnits % BigInt(100)).toString().padStart(2, "0");
+  const formattedWhole = new Intl.NumberFormat("en-MY", {
     style: "currency",
     currency: "MYR",
-  }).format(Number(amount));
+    maximumFractionDigits: 0,
+  }).format(match[1] === "-" ? -whole : whole);
+  return `${formattedWhole}.${cents}`;
 }
 
 function formatDate(date: string) {
@@ -98,7 +117,7 @@ export function TransactionManager({
     setDeleteConfirmationId(null);
     setEditDraft({
       type: transaction.type,
-      amount: String(transaction.amount),
+      amount: transaction.amount_text,
       categoryId: category?.is_archived ? "" : transaction.category_id,
       date: transaction.date,
       notes: transaction.notes ?? "",
@@ -115,8 +134,7 @@ export function TransactionManager({
     event.preventDefault();
     if (!editDraft || pendingRef.current) return;
 
-    const numericAmount = Number(editDraft.amount);
-    if (!editDraft.amount.trim() || !Number.isFinite(numericAmount) || numericAmount <= 0) {
+    if (!isPositiveAmount(editDraft.amount)) {
       setFeedback({ kind: "error", message: "Enter an amount greater than zero." });
       return;
     }
@@ -185,8 +203,7 @@ export function TransactionManager({
     event.preventDefault();
     if (pendingRef.current) return;
 
-    const numericAmount = Number(amount);
-    if (!amount.trim() || !Number.isFinite(numericAmount) || numericAmount <= 0) {
+    if (!isPositiveAmount(amount)) {
       setFeedback({ kind: "error", message: "Enter an amount greater than zero." });
       return;
     }
@@ -275,10 +292,8 @@ export function TransactionManager({
               <input
                 id="transaction-amount"
                 name="amount"
-                type="number"
+                type="text"
                 inputMode="decimal"
-                min="0"
-                step="any"
                 required
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
@@ -463,10 +478,8 @@ export function TransactionManager({
                               </label>
                               <input
                                 id={`edit-amount-${transaction.id}`}
-                                type="number"
+                                type="text"
                                 inputMode="decimal"
-                                min="0"
-                                step="any"
                                 required
                                 value={editDraft.amount}
                                 onChange={(event) => setEditDraft({ ...editDraft, amount: event.target.value })}
@@ -564,7 +577,7 @@ export function TransactionManager({
                             </div>
                             <div className="flex shrink-0 flex-col items-end gap-3">
                               <p className={`text-sm font-semibold ${isIncome ? "text-emerald-800" : "text-slate-900"}`}>
-                                {formatAmount(transaction.amount)}
+                                {formatAmount(transaction.amount_text)}
                               </p>
                               <div className="flex gap-2">
                                 <button

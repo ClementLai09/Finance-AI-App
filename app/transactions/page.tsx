@@ -15,7 +15,7 @@ export default async function TransactionsPage() {
   const [transactionsResult, categoriesResult] = await Promise.all([
     supabase
       .from("transactions")
-      .select("id, type, amount, category_id, date, notes, created_at")
+      .select("id, type, amount_text:amount::text, category_id, date, notes, created_at")
       .eq("user_id", user.id)
       .order("date", { ascending: false })
       .order("created_at", { ascending: false }),
