@@ -86,7 +86,7 @@ export function AuthForm({ mode, notice }: AuthFormProps) {
         return;
       }
 
-      router.replace("/");
+      window.location.replace("/");
       router.refresh();
     } catch {
       setErrorMessage("A connection error occurred. Please try again.");
