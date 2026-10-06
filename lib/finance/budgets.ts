@@ -13,3 +13,7 @@ export function calculateBudgetProgress(budgetAmount: string, spentAmount: strin
     overspentAmount: remainingAmount.startsWith("-") ? remainingAmount.slice(1) : null,
   };
 }
+
+export function resolveBudgetCategoryId(selectedId: string, availableIds: string[]): string {
+  return availableIds.includes(selectedId) ? selectedId : availableIds[0] ?? "";
+}

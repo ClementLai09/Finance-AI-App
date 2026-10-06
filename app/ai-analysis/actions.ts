@@ -3,6 +3,7 @@
 import { createClient } from "../../lib/supabase/server";
 import { addDecimals as add, compareDecimals, decimalToString as text, parseDecimal as decimal, subtractDecimals, type Decimal } from "../../lib/finance/decimal";
 import { validateReport, type AnalysisReport } from "../../lib/finance/ai-report";
+import { hasRelevantMonthlyAnalysisData } from "../../lib/finance/ai-analysis";
 
 export type { AnalysisReport } from "../../lib/finance/ai-report";
 
@@ -153,7 +154,7 @@ export async function analyzeMonth(rawMonth: string): Promise<ActionResult> {
       loadTransactions(supabase, user.id, previousStart, previousEnd),
       supabase.from("categories").select("id, name, type").eq("user_id", user.id),
       supabase.from("budgets").select("category_id, amount_text:amount::text").eq("user_id", user.id).eq("month", start),
-      supabase.from("savings_goals").select("name, target_text:target_amount::text, current_text:current_amount::text, target_date").eq("user_id", user.id),
+      supabase.from("savings_goals").select("name, target_text:target_amount::text, current_text:current_amount::text, target_date, created_at, updated_at").eq("user_id", user.id),
     ]);
     if (categoryResult.error || budgetResult.error || goalResult.error) throw new Error("Could not load all the information needed for this analysis.");
 
@@ -188,7 +189,14 @@ export async function analyzeMonth(rawMonth: string): Promise<ActionResult> {
       targetDate: goal.target_date,
     }));
 
-    if (!transactions.length && !budgets.length && !goals.length) return { ok: true, empty: true };
+    if (
+      !hasRelevantMonthlyAnalysisData(
+        rawMonth,
+        transactions.length,
+        budgets.length,
+        (goalResult.data ?? []) as { created_at: string | null; updated_at: string | null }[],
+      )
+    ) return { ok: true, empty: true };
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return { ok: false, error: "Monthly analysis is not configured yet. Add the server-only GEMINI_API_KEY environment variable and restart the app." };

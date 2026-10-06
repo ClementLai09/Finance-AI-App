@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { createBudget, deleteBudget, updateBudgetAmount } from "./actions";
 import { formatMoney } from "../../lib/finance/decimal";
+import { resolveBudgetCategoryId } from "../../lib/finance/budgets";
 
 export type BudgetCategory = {
   id: string;
@@ -46,6 +47,14 @@ export function BudgetManager({
   const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
   const [pending, setPending] = useState<"create" | "update" | "delete" | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const selectedCategoryId = resolveBudgetCategoryId(
+    categoryId,
+    availableCategories.map((category) => category.id),
+  );
+
+  useEffect(() => {
+    if (selectedCategoryId !== categoryId) setCategoryId(selectedCategoryId);
+  }, [categoryId, selectedCategoryId]);
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,7 +63,7 @@ export function BudgetManager({
     setPending("create");
     setFeedback(null);
     try {
-      const result = await createBudget(categoryId, newAmount);
+      const result = await createBudget(selectedCategoryId, newAmount);
       setFeedback({ kind: result.success ? "success" : "error", message: result.message });
       if (result.success) {
         setNewAmount("");
@@ -165,7 +174,7 @@ export function BudgetManager({
               </label>
               <select
                 id="budget-category"
-                value={categoryId}
+                value={selectedCategoryId}
                 onChange={(event) => setCategoryId(event.target.value)}
                 disabled={Boolean(pending)}
                 required
@@ -194,7 +203,7 @@ export function BudgetManager({
             </div>
             <button
               type="submit"
-              disabled={Boolean(pending) || !categoryId}
+              disabled={Boolean(pending) || !selectedCategoryId}
               className="rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {pending === "create" ? "Saving…" : "Set budget"}

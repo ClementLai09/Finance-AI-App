@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { validateReport } from "../lib/finance/ai-report";
-import { calculateBudgetProgress, isPositiveBudgetAmount } from "../lib/finance/budgets";
+import { hasRelevantMonthlyAnalysisData, hasSavingsGoalActivityInMonth } from "../lib/finance/ai-analysis";
+import { calculateBudgetProgress, isPositiveBudgetAmount, resolveBudgetCategoryId } from "../lib/finance/budgets";
 import { canSelectCategory, validateCategoryInput } from "../lib/finance/categories";
 import { addDecimals, compareDecimals, decimalToString, formatMoney, parseDecimal, subtractDecimals } from "../lib/finance/decimal";
 import { currentMonthKey, getMonthRange, isValidDate, monthStartForDate } from "../lib/finance/dates";
@@ -74,6 +75,12 @@ describe("monthly dashboard totals", () => {
 });
 
 describe("budget validation and calculations", () => {
+  it("keeps the selected budget category valid when available options change", () => {
+    expect(resolveBudgetCategoryId("transport", ["food", "transport"])).toBe("transport");
+    expect(resolveBudgetCategoryId("transport", ["food"])).toBe("food");
+    expect(resolveBudgetCategoryId("transport", [])).toBe("");
+  });
+
   it.each(["1", "0.01", ".5"])("accepts positive budget amount %s", (amount) => {
     expect(isPositiveBudgetAmount(amount)).toBe(true);
   });
@@ -85,6 +92,38 @@ describe("budget validation and calculations", () => {
   it("returns zero remaining at the limit and a positive overspend when exceeded", () => {
     expect(calculateBudgetProgress("100.00", "100")).toEqual({ remainingAmount: "0", overspentAmount: null });
     expect(calculateBudgetProgress("100", "125.25")).toEqual({ remainingAmount: "-25.25", overspentAmount: "25.25" });
+  });
+});
+
+describe("monthly AI analysis data gate", () => {
+  const oldGoal = [{ created_at: "2025-06-10T12:00:00.000Z", updated_at: "2025-06-10T12:00:00.000Z" }];
+
+  it("treats a completely empty month as empty", () => {
+    expect(hasRelevantMonthlyAnalysisData("2026-10", 0, 0, [])).toBe(false);
+  });
+
+  it("does not treat an older unchanged savings goal as activity", () => {
+    expect(hasRelevantMonthlyAnalysisData("2026-10", 0, 0, oldGoal)).toBe(false);
+  });
+
+  it("treats selected-month transactions or budgets as relevant data", () => {
+    expect(hasRelevantMonthlyAnalysisData("2026-10", 1, 0, [])).toBe(true);
+    expect(hasRelevantMonthlyAnalysisData("2026-10", 0, 1, [])).toBe(true);
+  });
+
+  it("treats a goal created or updated in the Kuala Lumpur month as activity", () => {
+    expect(hasSavingsGoalActivityInMonth([
+      { created_at: "2026-09-30T16:30:00.000Z", updated_at: "2026-09-30T16:30:00.000Z" },
+    ], "2026-10")).toBe(true);
+    expect(hasRelevantMonthlyAnalysisData("2026-10", 0, 0, [
+      { created_at: "2025-01-01T00:00:00.000Z", updated_at: "2026-10-15T12:00:00.000Z" },
+    ])).toBe(true);
+  });
+
+  it("does not attribute goal activity from another month", () => {
+    expect(hasSavingsGoalActivityInMonth([
+      { created_at: "2026-09-30T15:59:59.000Z", updated_at: "2026-10-31T16:00:00.000Z" },
+    ], "2026-10")).toBe(false);
   });
 });
 

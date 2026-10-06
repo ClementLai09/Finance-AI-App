@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { createClient } from "../../lib/supabase/client";
 
 type AuthFormProps = {
@@ -15,9 +15,9 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function AuthForm({ mode, notice }: AuthFormProps) {
   const router = useRouter();
   const isSignup = mode === "signup";
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const passwordConfirmationInputRef = useRef<HTMLInputElement>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +27,9 @@ export function AuthForm({ mode, notice }: AuthFormProps) {
     setErrorMessage("");
     setSuccessMessage("");
 
-    const normalizedEmail = email.trim();
+    const normalizedEmail = emailInputRef.current?.value.trim() ?? "";
+    const password = passwordInputRef.current?.value ?? "";
+    const passwordConfirmation = passwordConfirmationInputRef.current?.value ?? "";
     if (!emailPattern.test(normalizedEmail)) {
       setErrorMessage("Enter a valid email address.");
       return;
@@ -66,8 +68,8 @@ export function AuthForm({ mode, notice }: AuthFormProps) {
           return;
         }
 
-        setPassword("");
-        setPasswordConfirmation("");
+        if (passwordInputRef.current) passwordInputRef.current.value = "";
+        if (passwordConfirmationInputRef.current) passwordConfirmationInputRef.current.value = "";
         setSuccessMessage(
           "If email confirmation is required, check your inbox and follow the confirmation link before logging in.",
         );
@@ -121,19 +123,23 @@ export function AuthForm({ mode, notice }: AuthFormProps) {
         </p>
       )}
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
+      <form
+        action={isSignup ? "/signup" : "/login"}
+        method="post"
+        onSubmit={handleSubmit}
+        className="mt-6 space-y-4"
+        noValidate
+      >
         <div>
           <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">
             Email
           </label>
           <input
+            ref={emailInputRef}
             id="email"
-            name="email"
             type="email"
             autoComplete="email"
             required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
             aria-invalid={Boolean(errorMessage)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
           />
@@ -144,14 +150,12 @@ export function AuthForm({ mode, notice }: AuthFormProps) {
             Password
           </label>
           <input
+            ref={passwordInputRef}
             id="password"
-            name="password"
             type="password"
             autoComplete={isSignup ? "new-password" : "current-password"}
             minLength={8}
             required
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
             aria-invalid={Boolean(errorMessage)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
           />
@@ -164,14 +168,12 @@ export function AuthForm({ mode, notice }: AuthFormProps) {
               Confirm password
             </label>
             <input
+              ref={passwordConfirmationInputRef}
               id="password-confirmation"
-              name="password-confirmation"
               type="password"
               autoComplete="new-password"
               minLength={8}
               required
-              value={passwordConfirmation}
-              onChange={(event) => setPasswordConfirmation(event.target.value)}
               aria-invalid={Boolean(errorMessage)}
               className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
             />
